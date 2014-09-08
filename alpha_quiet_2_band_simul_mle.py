@@ -11,10 +11,10 @@ import triangle
 import multiprocessing
 from kapteyn import kmpfit
 from rotate_tqu import rotate_tqu
-from alpha_function import alpha_function
+from alpha_funcion import alpha_function
 
 def fit_pixel(inputs):
-	p0=[1,1,10]
+	p0=[1.,1.,10]
 	fitobj=kmpfit.Fitter(residuals=alpha_function,data=inputs)
 	fitobj.fit(params0=p0)
 	parms=np.array(fitobj.params)
@@ -60,7 +60,7 @@ if __name__=='__main__':
 		tmp_cmb=rotate_tqu(tmp_cmb,wl[i],alpha_radio);
 		sigma_q[i]=np.random.normal(0,1,npix)*noise_const_q[i]
 		sigma_u[i]=np.random.normal(0,1,npix)*noise_const_q[i]
-		tmp_out=hp.sphtfunc.smoothing(tmp_cmb+np.array([np.zeros(npix),sigma_q[i],sigma_u[i]]),fwhm=np.pi/180.,lmax=383,pol=1)
+		tmp_out=hp.sphtfunc.smoothing(tmp_cmb,fwhm=np.pi/180.,lmax=383,pol=1)
 		q_array[i]=tmp_out[1]
 		u_array[i]=tmp_out[2]
 		sigma_q[i]=hp.sphtfunc.smoothing(sigma_q[i],fwhm=np.pi/180)
@@ -132,7 +132,7 @@ if __name__=='__main__':
 		all_sky_head=fits.ImageHDU(quiet_all_sky,name='ALPHA ALL SKY')
 		all_sky_head.header['TUNIT1']=('rad/m^2', 'Physical Units of Map')	
 		hdulist=fits.HDUList([prim,alpha_head,q_head,u_head,dalpha_head,dq_head,du_head,all_sky_head])
-		hdulist.writeto('alpha_quiet_kmle_2-band_cmb'+str(p+1).zfill(1)+'.fits')
+		hdulist.writeto('alpha_quiet_kmle_2-band_cmb'+str(p+1).zfill(1)+'_simul.fits')
 	
 	total_time=time()-t1
 	print 'Total computation time: '+'{:.3f}'.format(total_time/60.)+' minutes'

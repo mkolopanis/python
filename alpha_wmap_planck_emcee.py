@@ -7,13 +7,7 @@ from time import time
 import emcee 
 import triangle
 import multiprocessing
-def rotate_tqu(map_in,wl,alpha):  #rotates tqu map by phase
-	npix=hp.nside2npix(hp.get_nside(map_in))
-	tmp_map=np.zeros((3,npix))
-	tmp_map[0]=map_in[0]
-	tmp_map[1]=map_in[1]*np.cos(2*alpha*wl**2) + map_in[2]*np.sin(2*alpha*wl**2)
-	tmp_map[2]=-map_in[1]*np.sin(2*alpha*wl**2) + map_in[2]*np.cos(2*alpha*wl**2)
-	return tmp_map
+from rotate_tqu import rotate_tqu
 
 def lnlike(theta,x,q_in,u_in,q_err,u_err):
 	q,u,a=theta
@@ -102,14 +96,15 @@ if __name__=='__main__':
 			npix1=hp.nside2npix(2048)
 		tmp_cmp=hp.sphtfunc.smoothing(simul_cmb,fwhm=beamfwhm[i]*np.pi/(180.*60.))	
 		tmp_cmb=rotate_tqu(tmp_cmb,wl_p[i],alpha_radio);
-		tmp_out=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i],nside_out=nside,order_in='nested',order_out='nested');
-		sigma_q_1[i]=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.,lmax=383);
-		tmp_out=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i],nside_out=nside,order_in='nested',order_out='nested');
-		sigma_u_1[i]=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.,lmax=383);
-		tmp_out=hp.ud_grade(tmp_cmb,nside_out=nside,order_in='nested',order_out='nested');
+		tmp_q=np.random.normal(0,1,npix1)*noise_const_q[i]
+		tmp_u=np.random.normal(0,1,npix1)*noise_const_q[i]
+		tmp_out=hp.ud_grade(tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u]),nside_out=nside,order_in='nested',order_out='nested');
 		tmp_out=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.,lmax=383,pol=1)
-		q_array_1[i]=tmp_out[1]+sigma_q_1[i]
-		u_array_1[i]=tmp_out[2]+sigma_u_1[i]
+		q_array_1[i]=tmp_out[1]
+		u_array_1[i]=tmp_out[2]
+		sigma_q_1[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
+		sigma_u_1[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_u,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
+		
 	t3=time()
 	print 'This computation took '+"{:.3f}".format((t3-t2)/60.)+' minutes'
 	names=['K','Ka','Q','V','W']
@@ -142,15 +137,14 @@ if __name__=='__main__':
 		tmp_cmb=hp.sphtfunc.smoothing(simul_cmb,fwhm=w_fwhm*np.pi/180.)
 		wmap_counts=hp.read_map(wmap_files[i],nest=1,field=3);
 		tmp_cmb=rotate_tqu(tmp_cmb,wl_w[i],alpha_radio);
-		tmp_out=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='nested',order_out='nested');
-		sigma_q_2[i]=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.,lmax=383);
-		tmp_out=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='nested',order_out='nested');
-		sigma_u_2[i]=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.,lmax=383);
-		tmp_out=hp.ud_grade(tmp_cmb,nside_out=nside,order_in='nested',order_out='nested');
+		tmp_q=np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts)
+		tmp_u=np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts)
+		tmp_out=hp.ud_grade(tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u]),nside_out=nside,order_in='nested',order_out='nested');
 		tmp_out=hp.sphtfunc.smoothing(tmp_out,lmax=383,pol=1,fwhm=np.pi/180.)
-		q_array_2[i]=tmp_out[1]+sigma_q_2[i]
-		u_array_2[i]=tmp_out[2]+sigma_u_2[i]
-	
+		q_array_2[i]=tmp_out[1]
+		u_array_2[i]=tmp_out[2]
+		sigma_q_2[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
+		sigma_u_2[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_u,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
 	
 	wl=np.concatenate((wl_p,wl_w))
 	

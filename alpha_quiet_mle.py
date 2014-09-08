@@ -19,21 +19,21 @@ def rotate_tqu(map_in,wl,alpha):  #rotates tqu map by phase
 	return tmp_map
 
 def alpha_function(P,x=None,y=None,err=None,fjac=None):
-	Q= np.array(P[0] + 2*P[2]*x**2*P[1])*1e-9
-	U= np.array(P[1] - 2*P[2]*x**2*P[0])*1e-9
+	Q= np.array(P[0] + 2*P[2]*x**2*P[1])*1e-7
+	U= np.array(P[1] - 2*P[2]*x**2*P[0])*1e-7
 	small_angle=(np.sin(2*P[2]*x**2)-2*P[2]*x**2)/np.sin(2*P[2]*x**2)
 	status=0
-	return [status,np.sqrt((y[0]-Q)**2/err[0]**2+(y[1]-U)**2/err[1]**2+small_angle**2/1.)]
+	return [status,np.concatenate([(y[0]-Q)/err[0],(y[1]-U)/err[1],small_angle/1.])]
 
 def fit_pixel(inputs):
 	wl,q_array,u_array,sigma_q,sigma_u=inputs
-	pos=[1e2,1e2,10]
+	pos=[1,1,10]
 	funcargs= {'x':wl, 'y':[q_array,u_array],'err':[sigma_q,sigma_u]}
 	fit=mpfit.mpfit(alpha_function,pos,functkw=funcargs,autoderivative=1,quiet=1)
 	parms=fit.params
-	parms[:2]*=1e-9
+	parms[:2]*=1e-7
 	dparms=fit.perror
-	dparms[:2]*=1e-9
+	dparms[:2]*=1e-7
 	return np.array([parms,dparms,fit.fnorm])
 
 def convertcenter(ra,dec):

@@ -1,8 +1,9 @@
-def alpha_function(P, x,y,err):
-	import numpy
-	Q= numpy.array(P[0] + 2*P[2]*x**2*P[1])*1e-5
-	U= numpy.array(P[1] - 2*P[2]*x**2*P[0])*1e-5
-	small_angle=(numpy.sin(2*P[2]*x**2)-2*P[2]*X**2)/numpy.sin(2*P[2]*x**2)
+import numpy as np
 
-	return [(y[:,0]-Q)/err[:,0],(y[:,1]-U)/err[:,1],small_angle/1.]
+def alpha_function(P,data):
+	wl,q,u,q_err,u_err=data
+	Q_mod= np.array([P[0] + 2*P[2]*x**2*P[1] for x in wl])*1e-7
+	U_mod= np.array([P[1] - 2*P[2]*x**2*P[0] for x in wl])*1e-7
+	small_angle=np.array([(np.sin(2*P[2]*x**2)-2*P[2]*x**2)/np.sin(2*P[2]*x**2) for x in wl])
+	return np.concatenate([(q-Q_mod)/q_err,(u-U_mod)/u_err,small_angle/1.])
 
