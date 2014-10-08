@@ -9,45 +9,18 @@ from time import time
 import emcee 
 import triangle
 import multiprocessing
+from kapteyn import kmpfit
 from rotate_tqu import rotate_tqu
-
-def lnlike(theta,x,q_in,u_in,q_err,u_err):
-	q,u,a=theta
-	pol_q=np.array([q+2*a*w**2*u for w in x])
-	pol_u=np.array([u-2*a*w**2*q for w in x])
-	inv_sigmaq=1.0/(q_err**2)
-	inv_sigmau=1.0/(u_err**2)
-	return -0.5*(np.sum((pol_q-q_in)**2*inv_sigmaq  + (pol_u-u_in)**2*inv_sigmau ))
-#- np.log(inv_sigmaq)- np.log(inv_sigmau)
-def lnprior(theta):
-	q,u,a=theta
-	if np.abs(q)<8e-6 and np.abs(u)<8e-6 and np.abs(a)<2250.:
-		return 0.0
-	else:
-		return -np.inf
-	#return -0.5*(((q)/(1000))**2+((u)/1000)**2+((a)/1000)**2+2*np.log(1000*1000*1000))
-
-def lnprob(theta,x,q_in,u_in,q_err,u_err):
-	lp=lnprior(theta)
-	if not np.isfinite(lp):
-		return -np.inf
-	return lp+lnlike(theta,x,q_in,u_in,q_err,u_err)
-
+from alpha_function import alpha_function
 def fit_pixel(inputs):
-	wl,q_array,u_array,sigma_q,sigma_u=inputs
-	ndim,nwalkers=3, 100
-	pos=[[1e-7,1e-7,10]*np.random.randn(ndim) for i in range(nwalkers)]
-	sampler=emcee.EnsembleSampler(nwalkers,ndim,lnprob,args=(wl,q_array,u_array,sigma_q,sigma_u))
-	sampler.run_mcmc(pos,800)
-	data=np.array(sampler.chain[:,100:,:].reshape((-1,ndim)))
-	output=np.zeros(3)
-	deltas=np.zeros(3)
-	for i in xrange(3):
-		tmp1,out1,tmp2=np.percentile(data[:,i],[16,50,84])
-		delta=np.max([out1-tmp1,tmp2-out1])
-		output[i]=out1
-		deltas[i]=delta
-	return np.reshape([output,deltas],6)
+	p0=[1.,1.,10]
+	fitobj=kmpfit.Fitter(residuals=alpha_function,data=inputs)
+	fitobj.fit(params0=p0)
+	parms=np.array(fitobj.params)
+	parms[:2]*=1e-7
+	dparms=np.array(fitobj.stderr)
+	dparms[:2]*=1e-7
+	return np.concatenate([parms,dparms,[fitobj.chi2_min],[fitobj.dof]])
 
 def convertcenter(ra,dec):
 	return np.array([(ra[0]+ra[1]/60.)/24.*360,dec])
@@ -56,7 +29,7 @@ def regioncoords(ra,dec,dx,nx,ny):
 	decs=np.array([ dec +dx*( j - ny/2.) for j in xrange(ny)])
 	coords= np.array([ [np.mod(ra+dx*(i-nx/2)/np.cos(dec*np.pi/180.),360),dec]  for i in xrange(nx) for dec in decs])
 	return coords
-
+	
 if __name__=='__main__':
 	t1=time()
 	radio_file='/data/wmap/faraday_MW_realdata.fits'
@@ -90,10 +63,9 @@ if __name__=='__main__':
 	
 	cls=hp.read_cl(cl_file)
 	simul_cmb=hp.sphtfunc.synfast(cls,2048,fwhm=5.*np.pi/(180.*60.),new=1,pol=1);
-	simul_cmb=hp.reorder(simul_cmb,r2n=1);
 	
 	alpha_radio=hp.read_map(radio_file,hdu='maps/phi');
-	alpha_radio=hp.ud_grade(alpha_radio,nside_out=2048,order_in='ring',order_out='nested')
+	alpha_radio=hp.ud_grade(alpha_radio,nside_out=2048,order_in='ring',order_out='ring')
 	
 	npix1=hp.nside2npix(2048)
 	t2=time()
@@ -107,12 +79,12 @@ if __name__=='__main__':
 		tmp_cmb=rotate_tqu(tmp_cmb,wl_p[i],alpha_radio);
 		tmp_q=np.random.normal(0,1,npix1)*noise_const_q[i]
 		tmp_u=np.random.normal(0,1,npix1)*noise_const_q[i]
-		tmp_out=hp.ud_grade(tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u]),nside_out=nside,order_in='nested',order_out='nested');
+		tmp_out=hp.ud_grade(tmp_cmb,nside_out=nside,order_in='ring',order_out='ring');
 		tmp_out=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.,lmax=383,pol=1)
 		q_array_1[i]=tmp_out[1]
 		u_array_1[i]=tmp_out[2]
-		sigma_q_1[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
-		sigma_u_1[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_u,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
+		sigma_q_1[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='ring',order_out='ring'),fwhm=np.pi/180.,lmax=383);
+		sigma_u_1[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_u,nside_out=nside,order_in='ring',order_out='ring'),fwhm=np.pi/180.,lmax=383);
 	t3=time()
 	print 'This computation took '+"{:.3f}".format((t3-t2)/60.)+' minutes'
 	names=['K','Ka','Q','V','W']
@@ -136,29 +108,29 @@ if __name__=='__main__':
 	sigma_q_2=np.zeros((num_wl,npix))
 	sigma_u_2=np.zeros((num_wl,npix))
 	
-	simul_cmb=hp.ud_grade(simul_cmb,nside_out=512,order_in='nested',order_out='nested')
+	simul_cmb=hp.ud_grade(simul_cmb,nside_out=512,order_in='ring',order_out='ring')
 	
 	
-	alpha_radio=hp.ud_grade(alpha_radio,nside_out=512,order_in='nested',order_out='nested');
+	alpha_radio=hp.ud_grade(alpha_radio,nside_out=512,order_in='ring',order_out='ring');
 	
 	for i in range(num_wl):
 		tmp_cmb=hp.sphtfunc.smoothing(simul_cmb,pol=1,fwhm=np.pi/(180.)*w_fwhm[i])
 		wmap_counts=hp.read_map(wmap_files[i],nest=1,field=3);
 		tmp_cmb=rotate_tqu(tmp_cmb,wl_w[i],alpha_radio);
-		tmp_q=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='nested',order_out='nested'
+		tmp_q_=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='ring',order_out='ring')
 		tmp_u=np.random.normal(0,1,npix1)*noise_const_q[i]
-		tmp_out=hp.ud_grade(tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u]),nside_out=nside,order_in='nested',order_out='nested');
+		tmp_out=hp.ud_grade(tmp_cmb,nside_out=nside,order_in='ring',order_out='ring');
 		tmp_out=hp.sphtfunc.smoothing(tmp_out,lmax=383,pol=1,fwhm=np.pi/180.)
 		q_array_2[i]=tmp_out[1]
 		u_array_2[i]=tmp_out[2]
-		sigma_q_2[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
-		sigma_u_2[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_u,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
+		sigma_q_2[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='ring',order_out='ring'),fwhm=np.pi/180.,lmax=383);
+		sigma_u_2[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_u,nside_out=nside,order_in='ring',order_out='ring'),fwhm=np.pi/180.,lmax=383);
 	
 	
 
 	bands_q=[43.1,94.5]
 	q_fwhm=[27.3,11.7]
-	noise_const_q=np.array([6./fwhm for fwhm in q_fwhm])*1e-6
+	noise_const_q=np.array([6./q_fwhm[0],6./q_fwhm[1]])*1e-6
 	centers=np.array([convertcenter([12,4],-39),convertcenter([5,12],-39),convertcenter([0,48],-48),convertcenter([22,44],-36)])
 	wl_q=np.array([299792458./(band*1e9) for band in bands_q])
 	num_wl=len(wl_q)
@@ -166,14 +138,14 @@ if __name__=='__main__':
 	u_array_3=np.zeros((num_wl,npix))
 	sigma_q_3=np.zeros((num_wl,npix))
 	sigma_u_3=np.zeros((num_wl,npix))	
-	simul_cmb=hp.ud_grade(simul_cmb,nside_out=128,order_in='nested',order_out='nested')
-	alpha_radio=hp.ud_grade(alpha_radio,nside_out=128,order_in='nested',order_out='nested');
+	simul_cmb=hp.ud_grade(simul_cmb,nside_out=128,order_in='ring',order_out='ring')
+	alpha_radio=hp.ud_grade(alpha_radio,nside_out=128,order_in='ring',order_out='ring');
 	for i in range(num_wl):
 		tmp_cmb=hp.sphtfunc.smoothing(simul_cmb,pol=1,fwhm=np.pi/(180.*60.)*q_fwhm[i])
 		tmp_cmb=rotate_tqu(tmp_cmb,wl_q[i],alpha_radio);
 		sigma_q_3[i]=np.random.normal(0,1,npix)*noise_const_q[i]
 		sigma_u_3[i]=np.random.normal(0,1,npix)*noise_const_q[i]
-		tmp_out=hp.sphtfunc.smoothing(tmp_cmb+np,array([np.zeros(npix),sigma_q_3[i],sigma_u_3[i]]),fwhm=np.pi/180.,lmax=383,pol=1)
+		tmp_out=hp.sphtfunc.smoothing(tmp_cmb,fwhm=np.pi/180.,lmax=383,pol=1)
 		q_array_3[i]=tmp_out[1]
 		u_array_3[i]=tmp_out[2]
 		sigma_q_3[i]=hp.sphtfunc.smoothing(sigma_q_3[i],fwhm=np.pi/180.,lmax=383);
@@ -209,9 +181,9 @@ if __name__=='__main__':
 	for p in xrange(len(centers)):
 		coords=regioncoords(centers[p,0],centers[p,1],dx,nx,ny)
 		coords_sky=SkyCoord(ra=coords[:,0],dec=coords[:,1],unit=u.degree,frame='fk5')
-		phi=coords_sky.galactic.l.deg*np.pi/180
-		theta1=coords_sky.galactic.b.deg*np.pi/180
-		pixels=np.reshape(hp.ang2pix(128,theta,phi,nest=1),(nx,ny))
+		phi=coords_sky.galactic.l.deg*np.pi/180.
+		theta=(90-coords_sky.galactic.b.deg)*np.pi/180.
+		pixels=np.reshape(hp.ang2pix(128,theta,phi),(nx,ny))
 		#fit these pixels
 		t0=time()
 		pool=multiprocessing.Pool()
@@ -220,34 +192,21 @@ if __name__=='__main__':
 		pool.join()
 		fit_time=time()-t0
 		#reconstruct 4 QUIET fields
-		#emcee code will go here
-
-		#real_alpha=hp.sphtfunc.smoothing(hp.ud_grade(alpha_radio,128,order_in='nested'),fwhm=np.pi/180.,lmax=383)
-		#real_t,real_q,real_u=hp.sphtfunc.smoothing(hp.ud_grade(simul_cmb,128,order_in='nested'),fwhm=np.pi/180.,lmax=383,pol=1)
 		
-		#samp1=sampler.flatchain
-		
-		#fig=triangle.corner(samp1,labels=["$q$","$u$","$alpha_{RM}$"],truths=[real_q[0],real_u[0],real_alpha[0]])
-		#plt.show()
-		
-		#q_mcmc,u_mcmc,a_mcmc=map(lambda v: (v[1],v[2]-v[1],v[1]-v[0]), zip(*np.percentile(samp1,[16,50,84], axis=0)))
-		
-		total_time=time()-t1
 		print 'Fitting occurred in '+'{:.3f}'.format(fit_time/60.)+' minutes'
-		print 'Total computation time: '+'{:.3f}'.format(total_time/60.)+' minutes'
-		q_map,u_map,alpha_map,dq_map,du_map,dalpha_map=list(zip(*outputs))
+		q_map,u_map,alpha_map,dq_map,du_map,dalpha_map,chisquare,dof=list(zip(*outputs))
 		q_map=np.reshape(q_map,(nx,ny))
 		u_map=np.reshape(u_map,(nx,ny))
 		alpha_map=np.reshape(alpha_map,(nx,ny))
 		dq_map=np.reshape(dq_map,(nx,ny))
 		du_map=np.reshape(du_map,(nx,ny))
 		dalpha_map=np.reshape(dalpha_map,(nx,ny))
+		chisquare=np.reshape(chisquare,(nx,ny))
+		dof=np.reshape(dof,(nx,ny))
 		
 		for pix in unique_pix:
 			ind=np.where(pixels == pix)
-			alpha_all_sky[pix]=np.average([alpha_map[ind[0][i],ind[1][i]] for i in xrange(len(ind[0]))])
-			q_all_sky[pix]=np.average([alpha_map[ind[0][i],ind[1][i]] for i in xrange(len(ind[0]))])
-			u_all_sky[pix]=np.average([alpha_map[ind[0][i],ind[1][i]] for i in xrange(len(ind[0]))])
+			quiet_all_sky[pix]=np.average([alpha_map[ind[0][i],ind[1][i]] for i in xrange(len(ind[0]))])
 			quiet_mask[pix]=1
 		
 		alpha_head=fits.ImageHDU(alpha_map,name="ALPHA RM")
@@ -262,15 +221,17 @@ if __name__=='__main__':
 		u_head.header['TUNIT1']=('K_{CMB} Thermodynamic', 'Physical Units of Map')
 		du_head=fits.ImageHDU(du_map,name="UNCERTAINTY U")
 		du_head.header['TUNIT1']=('K_{CMB} Thermodynamic', 'Physical Units of Map')
+		chi_head=fits.ImageHDU(chisquare,name='CHISQUARE')
+		dof_head=fits.ImageHDU(dof,name='DOF')
 		prim=fits.PrimaryHDU()
 		alpha_sky_head=fits.ImageHDU(alpha_all_sky,name='ALPHA ALL SKY')
 		alpha_sky_head.header['TUNIT1']=('rad/m^2', 'Physical Units of Map')	
-		q_sky_head=fits.ImageHDU(q_all_sky,name='STOKE Q ALL SKY')
+		q_sky_head=fits.ImageHDU(u_all_sky,name='STOKES U ALL SKY')
 		q_sky_head.header['TUNIT1']=('K_{CMB} Thermodynamic', 'Physical Units of Map')	
-		u_sky_head=fits.ImageHDU(u_all_sky,name='STOKES U ALL SKY')
+		u_sky_head=fits.ImageHDU(u_all_sky,name='STOKES Q ALL SKY')
 		u_sky_head.header['TUNIT1']=('K_{CMB} Thermodynamic', 'Physical Units of Map')	
 		hdulist=fits.HDUList([prim,alpha_head,q_head,u_head,dalpha_head,dq_head,du_head,alpha_sky_head,q_sky_head,u_sky_head])
-		hdulist.writeto('alpha_quiet_mle_cmb'+str(p).zfill(1)+'.fits')
+		hdulist.writeto('alpha_quiet_kmle_cmb'+str(p+1).zfill(1)+'.fits')
 	
 	total_time=time()-t1
 	print 'Total computation time: '+'{:.3f}'.format(total_time/60.)+' minutes'

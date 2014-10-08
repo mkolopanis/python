@@ -61,7 +61,7 @@ if __name__=='__main__':
 	for i in range(num_wl):
 		tmp_cmb=hp.sphtfunc.smoothing(simul_cmb,pol=1,fwhm=w_fwhm[i]*np.pi/180.)
 		wmap_counts=hp.read_map(wmap_files[i],field=3);
-		rot_cmb=rotate_tqu(simul_cmb,wl[i],alpha_radio);
+		rot_cmb=rotate_tqu(tmp_cmb,wl[i],alpha_radio);
 		#rot_cmb=hp.read_map(simul_files[i],field=[0,1,2])
 		tmp_q=np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts)
 		tmp_u=np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts)

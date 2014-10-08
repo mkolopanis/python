@@ -6,8 +6,6 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 import ipdb; 
 from time import time
-import emcee 
-import triangle
 import multiprocessing
 from kapteyn import kmpfit
 from rotate_tqu import rotate_tqu
@@ -53,23 +51,22 @@ if __name__=='__main__':
 	
 	cls=hp.read_cl(cl_file)
 	simul_cmb=hp.sphtfunc.synfast(cls,512,fwhm=5.*np.pi/(180.*60.),new=1,pol=1);
-	simul_cmb=hp.reorder(simul_cmb,r2n=1);
 	
 	alpha_radio=hp.read_map(radio_file,hdu='maps/phi');
-	alpha_radio=hp.ud_grade(alpha_radio,nside_out=512,order_in='ring',order_out='nested')
+	alpha_radio=hp.ud_grade(alpha_radio,nside_out=512,order_in='ring',order_out='ring')
 	
 	for i in range(num_wl):
 		tmp_cmb=hp.sphtfunc.smoothing(simul_cmb,pol=1,fwhm=np.pi/(180.)*w_fwhm[i])
-		wmap_counts=hp.read_map(wmap_files[i],nest=1,field=3);
+		wmap_counts=hp.read_map(wmap_files[i],field=3);
 		tmp_cmb=rotate_tqu(tmp_cmb,wl[i],alpha_radio);
 		tmp_q=np.random.normal(0,1,npix1)*noise_const_q[i]
 		tmp_u=np.random.normal(0,1,npix1)*noise_const_q[i]
-		tmp_out=hp.ud_grade(tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u]),nside_out=nside,order_in='nested',order_out='nested')
+		tmp_out=hp.ud_grade(tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u]),nside_out=nside,order_in='ring',order_out='ring')
 		tmp_out=hp.sphtfunc.smoothing(tmp_out,lmax=383,pol=1,fwhm=np.pi/180.)
 		q_array[i]=tmp_out[1]
 		u_array[i]=tmp_out[2]
-		sigma_q[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
-		sigma_u[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_u,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
+		sigma_q[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='ring',order_out='ring'),fwhm=np.pi/180.,lmax=383);
+		sigma_u[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_u,nside_out=nside,order_in='ring',order_out='ring'),fwhm=np.pi/180.,lmax=383);
 	
 	#fit these pixels
 	t0=time()

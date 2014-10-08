@@ -54,10 +54,9 @@ if __name__=="__main__":
 	npix=hp.nside2npix(nside)
 	cls=hp.read_cl(cl_file)
 	simul_cmb=hp.sphtfunc.synfast(cls,512,fwhm=13.*np.pi/(180.*60.),new=1,pol=1);
-	simul_cmb=hp.reorder(simul_cmb,r2n=1);
 	
 	alpha_radio=hp.read_map(radio_file,hdu='maps/phi');
-	alpha_radio=hp.ud_grade(alpha_radio,nside_out=512,order_in='ring',order_out='nested')
+	alpha_radio=hp.ud_grade(alpha_radio,nside_out=512,order_in='ring',order_out='ring')
 	
 	names=['K','Ka','Q','V','W']
 	bands=[23,33,41,61,94]
@@ -79,15 +78,15 @@ if __name__=="__main__":
 	sigma_q=np.zeros((num_wl,npix))
 	sigma_u=np.zeros((num_wl,npix))
 	for i in range(num_wl):
-		wmap_counts=hp.read_map(wmap_files[i],nest=1,field=3);
+		wmap_counts=hp.read_map(wmap_files[i],field=3);
 		tmp_cmb=rotate_tqu(simul_cmb,wl[i],alpha_radio);
-		tmp_out=hp.ud_grade(tmp_cmb,nside_out=nside,order_in='nested')
+		tmp_out=hp.ud_grade(tmp_cmb,nside_out=nside,order_in='ring')
 		tmp_out=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.,lmax=383,pol=1)
 		q_array[i]=tmp_out[1]
 		u_array[i]=tmp_out[2]
-		tmp_out=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='nested')
+		tmp_out=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='ring')
 		sigma_q[i]=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.)
-		tmp_out=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='nested')
+		tmp_out=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='ring')
 		sigma_u[i]=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.)
 	#emcee code will go here
 	
