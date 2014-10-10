@@ -2,8 +2,9 @@ import numpy as np
 import healpy as hp
 from astropy.io import fits
 import ipdb
-from make_quiet_field import main as simulate_fields
-
+import make_quiet_field as simulate_fields
+import plot_binned
+import subprocess
 def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands):
 	print "Computer Cross Correlations for Bands "+str(bands)
 
@@ -18,10 +19,11 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands):
 	iqu_band_j=hdu_j['stokes iqu'].data
 	sigma_i=hdu_i['Q/U UNCERTAINTIES'].data
 	sigma_j=hdu_j['Q/U UNCERTAINTIES'].data
-	mask_hdu=fits.open('/data/wmap/wmap_polarization_analysis_mask_r9_9yr_v5.fits')
-	mask=mask_hdu[1].data.field(0)
-	mask=hp.reorder(mask,n2r=1)
-	#mask=hdu_i['mask'].data
+	#mask_hdu=fits.open('/data/wmap/wmap_polarization_analysis_mask_r9_9yr_v5.fits')
+	#mask=mask_hdu[1].data.field(0)
+	#mask_hdu.close()
+	#mask=hp.reorder(mask,n2r=1)
+	mask=hdu_i['mask'].data
 	mask=hp.ud_grade(mask,nside_out=128)
 	pix=np.where(mask != 0)
 	pix=np.array(pix).reshape(len(pix[0]))
@@ -31,6 +33,8 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands):
 	iqu_band_i[2]+=sigma_i[1]
 	iqu_band_j[1]+=sigma_j[0]
 	iqu_band_j[2]+=sigma_j[1]
+	hdu_i.close()
+	hdu_j.close()
 	
 	iqu_band_i=hp.ud_grade(iqu_band_i,nside_out=128,order_in='ring')
 	iqu_band_j=hp.ud_grade(iqu_band_j,nside_out=128,order_in='ring')
@@ -39,7 +43,7 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands):
 	iqu_band_i=hp.smoothing(iqu_band_i,pol=1,fwhm=np.pi/180.,lmax=383)
 	iqu_band_j=hp.smoothing(iqu_band_j,pol=1,fwhm=np.pi/180.,lmax=383)
 	planck_T=hp.smoothing(planck_T,fwhm=np.pi/180.,lmax=383)
-	alpha_radio=hp.smoothing(alpha_radio,fwhm=np.pi/180.,lmax=383)
+	#alpha_radio=hp.smoothing(alpha_radio,fwhm=np.pi/180.,lmax=383)
 
 	const=2.*(wl_i**2-wl_j**2)	
 
@@ -57,6 +61,12 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands):
 	cross1_array=[]
 	cross2_array=[]
 	cross3_array=[]
+	
+	l=np.arange(len(3*128))
+	Bl_60=np.exp(-l*(l+1)*((60.0*np.pi/(180.*60.)/(np.sqrt(8.0*np.log(2.))))**2)/2.)
+	Bl_11=np.exp(-l*(l+1)*((11.7*np.pi/(180.*60.)/(np.sqrt(8.0*np.log(2.))))**2)/2.)
+	Bl_27=np.exp(-l*(l+1)*((27.3*np.pi/(180.*60.)/(np.sqrt(8.0*np.log(2.))))**2)/2.)
+	Bl_factor=Bl_60**2*Bl_11*Bl_27
 	for field1 in xrange(4):
 		for field2 in xrange(field1,4):
 	
@@ -84,11 +94,11 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands):
 			TEm[0].mask=mask_bool1
 			TEm[1].mask=mask_bool2
 			TEm[2].mask=mask_bool2
-
-			cross1_array.append(hp.anafast(DQm,map2=aUm))
-			cross2_array.append(hp.anafast(DUm,map2=aQm))
+			
+			cross1_array.append(hp.anafast(DQm,map2=aUm)/Bl_factor)
+			cross2_array.append(hp.anafast(DUm,map2=aQm)/Bl_factor)
 			cross_tmp=hp.anafast(TEm,pol=1,nspec=4)
-			cross3_array.append(cross_tmp[-1])
+			cross3_array.append(cross_tmp[-1]/Bl_factor)
 	
 	cross1=np.mean(cross1_array,axis=0)	##Average over all Cross Spectra
 	cross2=np.mean(cross2_array,axis=0)	##Average over all Cross Spectra
@@ -96,36 +106,6 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands):
 	hp.write_cl('cl_'+bands+'_FR_QxaU.fits',cross1)
 	hp.write_cl('cl_'+bands+'_FR_UxaQ.fits',cross2)
 	hp.write_cl('cl_'+bands+'_FR_TE_cmb.fits',cross3)
-
-	Delta_Q[pix_bad]=hp.UNSEEN
-	Delta_U[pix_bad]=hp.UNSEEN
-	alpha_u[pix_bad]=hp.UNSEEN
-	alpha_q[pix_bad]=hp.UNSEEN
-	planck_T[pix_bad]=hp.UNSEEN
-	prim=fits.PrimaryHDU()
-	pix_col=fits.Column(name='PIXEL',format='1J',array=pix)
-	col_dq=fits.Column(name='SIGNAL',format='1E',unit='K/m^2',array=Delta_Q[pix])
-	col_du=fits.Column(name='SIGNAL',format='1E',unit='K/m^2',array=Delta_U[pix])
-	col_aq=fits.Column(name='SIGNAL',format='1E',unit='K*rad/m^2',array=alpha_q[pix])
-	col_au=fits.Column(name='SIGNAL',format='1E',unit='K*rad/m^2',array=alpha_u[pix])
-	col_te1=fits.Column(name='SIGNAL',format='1E',unit='K*rad/m^2',array=TE_map[0][pix])
-	col_te2=fits.Column(name='STOKES Q',format='1E',unit='K/m^2',array=TE_map[1][pix])
-	col_te3=fits.Column(name='STOKES U',format='1E',unit='K/m^2',array=TE_map[2][pix])	
-	data=[col_dq,col_du,col_aq,col_au]
-	names=['Q','aU','U','aQ','TE']
-	for i in xrange(len(data)):
-		cols=fits.ColDefs([pix_col,data[i]])
-		tbhdu=fits.BinTableHDU.from_columns(cols)
-		tbhdu.header['PIXTYPE']=("HEALPIX","HEALPIX pixelisation")
-                tbhdu.header['ORDERING']=("RING","Pixel order scheme, either RING or NESTED")
-                tbhdu.header["COORDSYS"]=('G','Pixelization coordinate system')
-                tbhdu.header["NSIDE"]=(128,'Healpix Resolution paramter')
-                tbhdu.header['OBJECT']=('PARTIAL','Sky coverage, either FULLSKY or PARTIAL')
-                tbhdu.header['OBS_NPIX']=(len(pix),'Number of pixels observed')
-                tbhdu.header['INDXSCHM']=('EXPLICIT','indexing : IMPLICIT of EXPLICIT')
-                tblist=fits.HDUList([prim,tbhdu])
-		tblist.writeto('quiet_cross_'+names[i]+'.fits',clobber=True)
-	
 	return (cross1,cross2,cross3)
 
 
@@ -138,29 +118,41 @@ if __name__=='__main__':
 	names=['43','95']
 	wl=np.array([299792458./(band*1e9) for band in bands])
 	N_runs=100
+	bins=[1,5,10,20,50]
 	cross1_array=[]
 	cross2_array=[]
 	cross3_array=[]
 	
 	for i in xrange(N_runs):	
-		simulate_fields()
+		simulate_fields.main()
 		tmp1,tmp2,tmp3=faraday_correlate_quiet(i_file+'.fits',j_file+'.fits',wl[0],wl[1],alpha_file,names[0]+'x'+names[1])
 		cross1_array.append(tmp1)
 		cross2_array.append(tmp2)
 		cross3_array.append(tmp3)
 
 	f=open('cl_array_FR_QxaU_.json','w')
-	json.dump(cross1_array,f)
+	json.dump([[a for a in cross1_array[i]] for i in xrange(len(cross1_array))],f)
 	f.close()	
 	f=open('cl_array_FR_UxaQ_.json','w')
-	json.dump(cross2_array,f)
+	json.dump([[a for a in cross2_array[i]] for i in xrange(len(cross2_array))],f)
 	f.close()	
 	f=open('cl_array_FR_TE_.json','w')
-	json.dump(cross3_array,f)
+	json.dump([[a for a in cross3_array[i]] for i in xrange(len(cross3_array))],f)
 	f.close()	
 	cross1=np.mean(cross1_array,axis=0)
 	dcross1=np.std(cross1_array,axis=0)
+	plot_binned.plotBinned(cross1,dcross1,bins,'Cross_43x95_FR_QxaU', title='Cross 43x95 FR QxaU')
 	cross2=np.mean(cross2_array,axis=0)
 	dcross2=np.std(cross2_array,axis=0)
+	plot_binned.plotBinned(cross2,dcross2,bins,'Cross_43x95_FR_UxaQ', title='Cross 43x95 FR UxaQ')
 	cross3=np.mean(cross3_array,axis=0)
 	dcross3=np.std(cross3_array,axis=0)
+	plot_binned.plotBinned(cross3,dcross3,bins,'Cross_43x95_FR_TEU', title='Cross 43x95 FR TE')
+	
+	subprocess.Popen('mv *01* bin_01/')
+	subprocess.Popen('mv *05* bin_05/')
+	subprocess.Popen('mv *10* bin_10/')
+	subprocess.Popen('mv *20* bin_20/')
+	subprocess.Popen('mv *50* bin_50/')
+	subprocess.Popen('mv *.eps eps/')
+	
