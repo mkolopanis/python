@@ -36,8 +36,10 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 		y1=np.reshape(y*w,(nbins,bins))
 		l1=np.reshape(l,(nbins,bins))
 		n1=np.tile(1,(nbins,bins))
+		y2=np.reshape(y,(nbins,bins))
 		
 		llcl_out=np.sum(y1,1)/np.sum(w1,1)
+		std_llcl=np.std(y2,1)
 		l_out = np.sum(l1,1)/np.sum(n1,1)
 		dl=np.repeat(bins,nbins)
 	else:	##irregular binning
@@ -58,12 +60,14 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 			y*=(l*(l+1)/(2*np.pi))
 		l_out=np.zeros(nbins)
 		llcl_out=np.zeros(nbins)
+		std_llcl=np.zeros(nbins)
 		dl=np.zeros(nbins)
 		for i in xrange(nbins):
 			l_out[i] = np.mean(l[bins[i]:bins[i+1] -1])
 			dl[i]=bins[i+1]-bins[i]
 			llcl_out[i] = np.sum((y*w)[bins[i]:bins[i+1]-1])/np.sum(w[bins[i]:bins[i+1]-1])
+			std_llcl[i] = np.std(y[bins[i]:bins[i+1]-1])
 	dllcl=llcl_out*np.sqrt(2./(2*l_out+1)/dl)
 	deltal=dl
-	return {'llcl':llcl_out,'l_out':l_out,'dllcl':dllcl,'deltal':deltal}
+	return {'llcl':llcl_out,'l_out':l_out,'dllcl':dllcl,'deltal':deltal,'std_llcl':std_llcl}
 

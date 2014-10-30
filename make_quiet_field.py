@@ -27,7 +27,7 @@ def main():
 	
 	cls=hp.read_cl(cl_file)
 	print 'Generating Map'
-	simul_cmb=hp.sphtfunc.synfast(cls,nside,fwhm=11.7*np.pi/(180.*60.),new=1,pol=1);
+	simul_cmb=hp.sphtfunc.synfast(cls,nside,fwhm=0.,new=1,pol=1);
 	
 	alpha_radio=hp.read_map(radio_file,hdu='maps/phi');
 	alpha_radio=hp.ud_grade(alpha_radio,nside_out=nside,order_in='ring',order_out='ring')
@@ -44,12 +44,12 @@ def main():
 	sigma_u=np.zeros((num_wl,npix))
 	for i in range(num_wl):
 		tmp_cmb=rotate_tqu(simul_cmb,wl[i],alpha_radio);
-		tmp_q=np.random.normal(0,1,npix)*noise_const_q[i]
-		tmp_u=np.random.normal(0,1,npix)*noise_const_q[i]
-		tmp_out=hp.sphtfunc.smoothing(tmp_cmb,fwhm=np.pi/180.,pol=1)
+		sigma_q[i]=np.random.normal(0,1,npix)*noise_const_q[i]
+		sigma_u[i]=np.random.normal(0,1,npix)*noise_const_q[i]
+		tmp_out=hp.sphtfunc.smoothing(tmp_cmb,fwhm=q_fwhm[i]*np.pi/(180.*60.),pol=1)
 		t_array[i],q_array[i],u_array[i]=tmp_out
-		sigma_q[i]=hp.sphtfunc.smoothing(tmp_q,fwhm=np.pi/180.)
-		sigma_u[i]=hp.sphtfunc.smoothing(tmp_u,fwhm=np.pi/180.)
+		#sigma_q[i]=hp.sphtfunc.smoothing(tmp_q,fwhm=np.pi/180.)
+		#sigma_u[i]=hp.sphtfunc.smoothing(tmp_u,fwhm=np.pi/180.)
 	
 	print "Time to Write Fields"
 	dx=1./(60.)*3
@@ -202,3 +202,7 @@ def main():
 		hdulist=fits.HDUList([prim,q_head,err_head,mask_head,tbhdu])
 		hdulist.writeto(output_prefix+"quiet_simulated_{:.1f}.fits".format(bands[i]),clobber=True)
 		print "quiet_simulated_{:.1f}.fits".format(bands[i])
+
+
+if __name__ == '__main__':
+	main()
