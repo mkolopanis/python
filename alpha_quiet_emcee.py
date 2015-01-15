@@ -108,7 +108,7 @@ if __name__=='__main__':
 		tmp_q=np.random.normal(0,1,npix1)*noise_const_q[i]
 		tmp_u=np.random.normal(0,1,npix1)*noise_const_q[i]
 		tmp_out=hp.ud_grade(tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u]),nside_out=nside,order_in='nested',order_out='nested');
-		tmp_out=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.,lmax=383,pol=1)
+		tmp_out=hp.sphtfunc.smoothing(tmp_out,fwhm=np.sqrt((60.)**2-(beamfwhm[1])**2)*np.pi/(180.*60.),lmax=383,pol=1)
 		q_array_1[i]=tmp_out[1]
 		u_array_1[i]=tmp_out[2]
 		sigma_q_1[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
@@ -148,7 +148,7 @@ if __name__=='__main__':
 		tmp_q=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='nested',order_out='nested'
 		tmp_u=np.random.normal(0,1,npix1)*noise_const_q[i]
 		tmp_out=hp.ud_grade(tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u]),nside_out=nside,order_in='nested',order_out='nested');
-		tmp_out=hp.sphtfunc.smoothing(tmp_out,lmax=383,pol=1,fwhm=np.pi/180.)
+		tmp_out=hp.sphtfunc.smoothing(tmp_out,lmax=383,pol=1,fwhm=np.sqrt((1.)**2-(w_fwhm[i])**2)*np.pi/180.)
 		q_array_2[i]=tmp_out[1]
 		u_array_2[i]=tmp_out[2]
 		sigma_q_2[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='nested',order_out='nested'),fwhm=np.pi/180.,lmax=383);
@@ -173,7 +173,7 @@ if __name__=='__main__':
 		tmp_cmb=rotate_tqu(tmp_cmb,wl_q[i],alpha_radio);
 		sigma_q_3[i]=np.random.normal(0,1,npix)*noise_const_q[i]
 		sigma_u_3[i]=np.random.normal(0,1,npix)*noise_const_q[i]
-		tmp_out=hp.sphtfunc.smoothing(tmp_cmb+np,array([np.zeros(npix),sigma_q_3[i],sigma_u_3[i]]),fwhm=np.pi/180.,lmax=383,pol=1)
+		tmp_out=hp.sphtfunc.smoothing(tmp_cmb+np,array([np.zeros(npix),sigma_q_3[i],sigma_u_3[i]]),fwhm=np.sqrt((60.)**2-(q_fwhm[i])**2)*np.pi/(180.*60.),lmax=383,pol=1)
 		q_array_3[i]=tmp_out[1]
 		u_array_3[i]=tmp_out[2]
 		sigma_q_3[i]=hp.sphtfunc.smoothing(sigma_q_3[i],fwhm=np.pi/180.,lmax=383);

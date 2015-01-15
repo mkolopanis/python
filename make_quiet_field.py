@@ -33,7 +33,7 @@ def main():
 	alpha_radio=hp.ud_grade(alpha_radio,nside_out=nside,order_in='ring',order_out='ring')
 	bands=[43.1,94.5]
 	q_fwhm=[27.3,11.7]
-	noise_const_q=np.array([6./fwhm for fwhm in q_fwhm])*1e-6
+	noise_const_q=np.array([36./fwhm for fwhm in q_fwhm])*1e-6
 	centers=np.array([convertcenter([12,4],-39),convertcenter([5,12],-39),convertcenter([0,48],-48),convertcenter([22,44],-36)])
 	wl=np.array([299792458./(band*1e9) for band in bands])
 	num_wl=len(wl)
@@ -57,6 +57,7 @@ def main():
 	ny=nx
 	all_pix=[]
 	field_pix=[]
+	square_pix=[]
 	quiet_mask=np.zeros(npix)
 	prim=fits.PrimaryHDU()
 	prim.header['COMMENT']="Simulated Quiet Data"
@@ -70,6 +71,7 @@ def main():
 		quiet_mask[pixels]=1
 		unique_pix=(np.unique(pixels).tolist())
 		field_pix.append(unique_pix)
+		square_pix.append(pixels)
 		all_pix.extend(unique_pix)
 		pix_col=fits.Column(name='PIXEL',format='1J',array=unique_pix)
 		for f in xrange(num_wl):
@@ -107,10 +109,13 @@ def main():
 			err_head.header['TTYPE2']='SIGMA U'
 			err_head.header['TUNIT2']=('K_{CMB} Thermodynamic', 'Physical Units of Map')
 			err_head.header['PIXTYPE']=("HEALPIX","HEALPIX pixelisation")
-			err_head.header['OBJECT']=('FULLSKY','Sky coverage, either FULLSKY or PARTIAL')
+			err_head.header['OBJECT']=('PARTIAL','Sky coverage, either FULLSKY or PARTIAL')
 			err_head.header['INDXSCHM']=('EXPLICIT','indexing : IMPLICIT of EXPLICIT')
 			m_head=fits.ImageHDU(region_mask,name='MASK')	
-			hdulist=fits.HDUList([prim,q_head,err_head,m_head])
+			sqr_pix_col=fits.Column(name='PIXELS',format='1J',array=pixels)
+			sqr_pix_cols=fits.ColDefs([sqr_pix_col])
+			sqr_pix_head=fits.BinTableHDU.from_columns(sqr_pix_cols)
+			hdulist=fits.HDUList([prim,q_head,err_head,m_head,sqr_pix_head])
 			hdulist.writeto(output_prefix+"quiet_simulated_{:.1f}_cmb{:1d}.fits".format(bands[f],p+1),clobber=True)
 			print '{:.1f}_cmb{:1d}.fits'.format(bands[f],p+1)
 	
@@ -121,6 +126,26 @@ def main():
 	field_pix_col2=fits.Column(name='PIXELS FIELD 2',format='1J',array=field_pix[1])
 	field_pix_col3=fits.Column(name='PIXELS FIELD 3',format='1J',array=field_pix[2])
 	field_pix_col4=fits.Column(name='PIXELS FIELD 4',format='1J',array=field_pix[3])
+	
+	sqr_pix_col1=fits.Column(name='PIXELS FIELD 1',format='1J',array=square_pix[0])
+	sqr_pix_col2=fits.Column(name='PIXELS FIELD 2',format='1J',array=square_pix[1])
+	sqr_pix_col3=fits.Column(name='PIXELS FIELD 3',format='1J',array=square_pix[2])
+	sqr_pix_col4=fits.Column(name='PIXELS FIELD 4',format='1J',array=square_pix[3])
+	cols1=fits.ColDefs([sqr_pix_col1,sqr_pix_col2,sqr_pix_col3,sqr_pix_col4])
+	tbhdu1=fits.BinTableHDU.from_columns(cols1)
+	tbhdu1.header['TFIELDS']=(4,'number of fields in each row')
+	tbhdu1.header["TTYPE1"]=("PIXELS CMB FIELD 1","SQUARE PIXEL NUMBER BY FIELD")
+	tbhdu1.header["TTYPE2"]=("PIXELS CMB FIELD 2","SQUARE PIXEL NUMBER BY FIELD")
+	tbhdu1.header["TTYPE3"]=("PIXELS CMB FIELD 3","SQUARE PIXEL NUMBER BY FIELD")
+	tbhdu1.header["TTYPE4"]=("PIXELS CMB FIELD 4","SQUARE PIXEL NUMBER BY FIELD")
+	tbhdu1.header["EXTNAME"]="SQUARE PIXELS"
+	tbhdu1.header['PIXTYPE']=("HEALPIX","HEALPIX pixelisation")
+	tbhdu1.header['ORDERING']=("RING","Pixel order scheme, either RING or NESTED")
+	tbhdu1.header["NSIDE"]=(nside,'Healpix Resolution paramter')
+	tbhdu1.header['OBJECT']=('PARTIAL','Sky coverage, either FULLSKY or PARTIAL')
+	tbhdu1.header['OBS_NPIX']=(len(all_pix),'Number of pixels observed')
+	tbhdu1.header['INDXSCHM']=('IMPLICIT','indexing : IMPLICIT of EXPLICIT')
+	tbhdu1.header["COORDSYS"]=('G','Pixelization coordinate system')
 	for i in xrange(num_wl):
 		cut_t,cut_q,cut_u=t_array[i][all_pix],q_array[i][all_pix],u_array[i][all_pix]
 		cut_dq,cut_du=sigma_q[i][all_pix],sigma_u[i][all_pix]
@@ -168,21 +193,6 @@ def main():
 		q_head.header['BAD_DATA']=(hp.UNSEEN,'Sentinel value given to bad pixels')
 		q_head.header["COORDSYS"]=('G','Pixelization coordinate system')
 		
-		cols=fits.ColDefs([field_pix_col1,field_pix_col2,field_pix_col3,field_pix_col4])
-		tbhdu=fits.BinTableHDU.from_columns(cols)
-		tbhdu.header['TFIELDS']=(4,'number of fields in each row')
-		tbhdu.header["TTYPE1"]=("PIXELS CMB FIELD 1","PIXEL NUMBER BY FIELD")
-		tbhdu.header["TTYPE2"]=("PIXELS CMB FIELD 2","PIXEL NUMBER BY FIELD")
-		tbhdu.header["TTYPE3"]=("PIXELS CMB FIELD 3","PIXEL NUMBER BY FIELD")
-		tbhdu.header["TTYPE4"]=("PIXELS CMB FIELD 4","PIXEL NUMBER BY FIELD")
-		tbhdu.header["EXTNAME"]="FIELD PIXELS"
-		tbhdu.header['PIXTYPE']=("HEALPIX","HEALPIX pixelisation")
-		tbhdu.header['ORDERING']=("RING","Pixel order scheme, either RING or NESTED")
-		tbhdu.header["NSIDE"]=(nside,'Healpix Resolution paramter')
-		tbhdu.header['OBJECT']=('PARTIAL','Sky coverage, either FULLSKY or PARTIAL')
-		tbhdu.header['OBS_NPIX']=(len(all_pix),'Number of pixels observed')
-		tbhdu.header['INDXSCHM']=('IMPLICIT','indexing : IMPLICIT of EXPLICIT')
-		tbhdu.header["COORDSYS"]=('G','Pixelization coordinate system')
 		#tblist=fits.HDUList([prim,tbhdu])
 		err_head=fits.ImageHDU(np.array([sigma_q[i],sigma_u[i]]),name='Q/U UNCERTAINTIES')
 		err_head.header['TFIELDS']=(2,'number of fields in each row')
@@ -199,7 +209,22 @@ def main():
 		err_head.header['OBJECT']=('FULLSKY','Sky coverage, either FULLSKY or PARTIAL')
 		err_head.header['INDXSCHM']=('IMPLICIT','indexing : IMPLICIT of EXPLICIT')
 		err_head.header['BAD_DATA']=(hp.UNSEEN,'Sentinel value given to bad pixels')
-		hdulist=fits.HDUList([prim,q_head,err_head,mask_head,tbhdu])
+		cols=fits.ColDefs([field_pix_col1,field_pix_col2,field_pix_col3,field_pix_col4])
+		tbhdu=fits.BinTableHDU.from_columns(cols)
+		tbhdu.header['TFIELDS']=(4,'number of fields in each row')
+		tbhdu.header["TTYPE1"]=("PIXELS CMB FIELD 1","PIXEL NUMBER BY FIELD")
+		tbhdu.header["TTYPE2"]=("PIXELS CMB FIELD 2","PIXEL NUMBER BY FIELD")
+		tbhdu.header["TTYPE3"]=("PIXELS CMB FIELD 3","PIXEL NUMBER BY FIELD")
+		tbhdu.header["TTYPE4"]=("PIXELS CMB FIELD 4","PIXEL NUMBER BY FIELD")
+		tbhdu.header["EXTNAME"]="FIELD PIXELS"
+		tbhdu.header['PIXTYPE']=("HEALPIX","HEALPIX pixelisation")
+		tbhdu.header['ORDERING']=("RING","Pixel order scheme, either RING or NESTED")
+		tbhdu.header["NSIDE"]=(nside,'Healpix Resolution paramter')
+		tbhdu.header['OBJECT']=('PARTIAL','Sky coverage, either FULLSKY or PARTIAL')
+		tbhdu.header['OBS_NPIX']=(len(all_pix),'Number of pixels observed')
+		tbhdu.header['INDXSCHM']=('IMPLICIT','indexing : IMPLICIT of EXPLICIT')
+		tbhdu.header["COORDSYS"]=('G','Pixelization coordinate system')
+		hdulist=fits.HDUList([prim,q_head,err_head,mask_head,tbhdu,tbhdu1])
 		hdulist.writeto(output_prefix+"quiet_simulated_{:.1f}.fits".format(bands[i]),clobber=True)
 		print "quiet_simulated_{:.1f}.fits".format(bands[i])
 

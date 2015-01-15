@@ -12,16 +12,16 @@ def wigner_3j(l1,l2,l3):
 
 
 def mll_value(inputs):
-	wl,l1,l2=inputs
-	l3=np.arange(len(wl))
-	array=[(2*i+1)*wl[i]*wigner_3j(l1,l2,i)**2 for i in l3]
+	wl,l1,l2,l3=inputs
+	#l3=np.arange(len(wl))
+	array=[(2*i+1)*wl[np.argwhere(l3 == i)[0][0]]*wigner_3j(l1,l2,i)**2 for i in l3]
 	ml = (2*l2+1)/(4*np.pi)*np.sum(array)
 	return ml
 
-def Mll(wl):
-	x,y=np.mgrid[0:len(wl),0:len(wl)]
+def Mll(wl,l_in):
+	x,y=np.meshgrid(l_in,l_in)
 	pool=multiprocessing.Pool()
-	results=pool.map(mll_value,[[wl,x.flat[i],y.flat[i]] for i in xrange(len(x.flat))])
+	results=pool.map(mll_value,[[wl,x.flat[i],y.flat[i],l_in] for i in xrange(len(x.flat))])
 	pool.close()
 	pool.join()
 	#Mll=np.matrix(np.reshape(results,(len(x.flat),len(x.flat))))

@@ -7,6 +7,7 @@ import healpy as hp
 from astropy.io import fits
 import ipdb
 import make_quiet_field as simulate_fields
+import rotate_tqu
 import plot_binned
 import subprocess
 import json
@@ -209,7 +210,7 @@ def faraday_noise_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False):
 	hp.write_cl('cl_'+bands+'_FR_noise_TE_cmb.fits',cross3)
 	return (cross1,cross2,cross3)
 
-def faraday_theory_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False):
+def faraday_theory_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands_name,beam=False):
 	print "Computing Cross Correlations for Bands "+str(bands_name)
 
 	radio_file='/data/wmap/faraday_MW_realdata.fits'
@@ -297,9 +298,9 @@ def faraday_theory_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False):
 	cross1=np.mean(cross1_array,axis=0)	##Average over all Cross Spectra
 	cross2=np.mean(cross2_array,axis=0)	##Average over all Cross Spectra
 	cross3=np.mean(cross3_array,axis=0)	##Average over all Cross Spectra
-	hp.write_cl('cl_'+bands+'_FR_QxaU.fits',cross1)
-	hp.write_cl('cl_'+bands+'_FR_UxaQ.fits',cross2)
-	hp.write_cl('cl_'+bands+'_FR_TE_cmb.fits',cross3)
+	hp.write_cl('cl_'+bands_name+'_FR_QxaU.fits',cross1)
+	hp.write_cl('cl_'+bands_name+'_FR_UxaQ.fits',cross2)
+	hp.write_cl('cl_'+bands_name+'_FR_TE_cmb.fits',cross3)
 	return (cross1,cross2,cross3)
 
 def main():

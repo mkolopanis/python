@@ -12,6 +12,8 @@ from kapteyn import kmpfit
 from rotate_tqu import rotate_tqu
 from alpha_function import alpha_function
 
+smoothing_scale=30.0
+
 def fit_pixel(inputs):
 	wl,q_array,u_array,sigma_q,sigma_u=inputs
 	sb1=sigma_q[0]**2/u_array[-1]**2 + sigma_q[-1]**2/u_array[-1]**2+(sigma_q[0]**2+sigma_q[-1]**2)*sigma_u[-1]**2/u_array[-1]**4
@@ -52,10 +54,10 @@ if __name__=='__main__':
 	npix=hp.nside2npix(nside)
 	
 	cls=hp.read_cl(cl_file)
-	simul_cmb=hp.sphtfunc.synfast(cls,128,fwhm=5.*np.pi/(180.*60.),new=1,pol=1);
+	simul_cmb=hp.sphtfunc.synfast(cls,1024,fwhm=0,new=1,pol=1);
 	
 	alpha_radio=hp.read_map(radio_file,hdu='maps/phi');
-	alpha_radio=hp.ud_grade(alpha_radio,nside_out=128,order_in='ring',order_out='ring')
+	alpha_radio=hp.ud_grade(alpha_radio,nside_out=1024,order_in='ring',order_out='ring')
 	bands=[43.1,94.5]
 	q_fwhm=[27.3,11.7]
 	noise_const_q=np.array([6./q_fwhm[0],6./q_fwhm[1]])*1e-6
@@ -68,15 +70,18 @@ if __name__=='__main__':
 	sigma_u=np.zeros((num_wl,npix))	
 	
 	for i in range(num_wl):
-		tmp_cmb=hp.sphtfunc.smoothing(simul_cmb,fwhm=np.pi/(180.*60.)*q_fwhm[i],pol=1)
-		rot_cmb=rotate_tqu(tmp_cmb,wl[i],alpha_radio);
+		rot_cmb=rotate_tqu(simul_cmb,wl[i],alpha_radio);
+		tmp_cmb=hp.sphtfunc.smoothing(rot_cmb,fwhm=np.pi/(180.*60.)*q_fwhm[i],pol=1)
 		tmp_q=np.random.normal(0,1,npix)*noise_const_q[i]
 		tmp_u=np.random.normal(0,1,npix)*noise_const_q[i]
-		tmp_out=hp.sphtfunc.smoothing(rot_cmb,fwhm=np.pi/180.,lmax=383,pol=1)
+		tmp_out=hp.sphtfunc.smoothing(tmp_cmb,fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[i])**2)*np.pi/(180.*60.),lmax=383,pol=1)
+		tmp_out=hp.ud_grade(tmp_out,128)
 		q_array[i]=tmp_out[1]
 		u_array[i]=tmp_out[2]
-		sigma_q[i]=hp.sphtfunc.smoothing(tmp_q,fwhm=np.pi/180)
-		sigma_u[i]=hp.sphtfunc.smoothing(tmp_u,fwhm=np.pi/180)
+		sqtmp=hp.sphtfunc.smoothing(tmp_q,fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[i])**2)*np.pi/(180.*60.),lmax=383,pol=1)
+		sutmp=hp.sphtfunc.smoothing(tmp_u,fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[i])**2)*np.pi/(180.*60.),lmax=383,pol=1)
+		sigma_q[i]=hp.ud_grade(sqtmp,128)
+		sigma_u[i]=hp.ud_grade(sutmp,128)
 	#need to find pixels for just the CMB field from QUIET
 	dx=1./(60.)*3
 	nx=np.int(15/dx)

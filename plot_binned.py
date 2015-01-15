@@ -1,26 +1,26 @@
 import numpy as np
 import bin_llcl
 import matplotlib.pyplot as plt
-
-def plotBinned(cls_in,dcls_in,bins,output_prefix,title=None,theory=None):
-	l=np.arange(len(cls_in))
-	ll=l*(l+1)/(2*np.pi)
-	for b in bins:
-		b_cl=bin_llcl.bin_llcl(ll*cls_in,b)	
-		b_dcl=bin_llcl.bin_llcl(ll*dcls_in,b)
-		plt.figure()
-		plt.clf()
-		if not (theory is None) :
-			plt.plot(l,ll*theory,'r-')	
-		plt.errorbar(b_cl['l_out'],b_cl['llcl'],yerr=b_dcl['llcl']/np.sqrt(b),xerr=b_cl['deltal']/np.sqrt(b),color='black')
-		plt.plot(b_cl['l_out'],b_cl['llcl'],'k.')
-		plt.xlim([0,np.max(b_cl['l_out']+b_cl['deltal'])])
-		#plt.ylim([np.min(b_cl['llcl']-b_dcl['llcl']),np.max(b_cl['llcl']+b_dcl['llcl'])])
-		plt.xlabel('$\ell$')
-		plt.ylabel('$\\frac{\ell(\ell+1)}{2\pi}C_{\ell}\ \\frac{\mu K^{2}rad}{m^{4}}$')
-		if title:
-			plt.title(title)
-		else:
-			plt.title('Binned Cls {:02d}'.format(b))
-		plt.savefig(output_prefix+'_{:02d}'.format(b))
-		plt.savefig(output_prefix+'_{:02d}.png'.format(b),format='png')
+import ipdb
+def plotBinned(cls_in,dcls_in,l_out,bins,output_prefix,title=None,theory=None,dtheory=None,delta=None,cosmic=None):
+	plt.figure()
+	plt.clf()
+	if not (theory is None) :
+		plt.plot(l_out,theory,'r-')	
+	if not (dtheory is None) :
+		plt.fill_between(l_out,(theory-cosmic),(theory+cosmic),alpha=.5,facecolor='green')
+	if not (cosmic is None) :
+		plt.errorbar(l_out,theory,yerr=dtheory,color='red')
+	plt.errorbar(l_out,cls_in,yerr=dcls_in,xerr=bins,color='black',fmt='k.',linestyle='None')
+	if not (delta is None) :
+		plt.fill_between(l_out,cls_in-delta,cls_in+delta,color='gray',alpha=0.5)
+	plt.xlim([0,np.max(l_out+bins)])
+	#plt.ylim([np.min(b_cl['llcl']-b_dcl['llcl']),np.max(b_cl['llcl']+b_dcl['llcl'])])
+	plt.xlabel('$\ell$')
+	plt.ylabel('$\\frac{\ell(\ell+1)}{2\pi}C_{\ell}\ \\frac{\mu K^{2}rad}{m^{4}}$')
+	if title:
+		plt.title(title)
+	else:
+		plt.title('Binned Cls {:02d}'.format(bins))
+	plt.savefig(output_prefix+'_{:02d}'.format(bins))
+	plt.savefig(output_prefix+'_{:02d}.png'.format(bins),format='png')
