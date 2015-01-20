@@ -1137,7 +1137,7 @@ static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_xrange;
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_RuntimeError;
-static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_alms, PyObject *__pyx_v_alms2, PyObject *__pyx_v_lmax, PyObject *__pyx_v_mmax, PyObject *__pyx_v_lmax_out, PyObject *__pyx_v_Weight); /* proto */
+static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_alms, PyObject *__pyx_v_alms2, PyObject *__pyx_v_lmax, PyObject *__pyx_v_mmax, PyObject *__pyx_v_lmax_out, PyObject *__pyx_v_weight); /* proto */
 static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
 static char __pyx_k_B[] = "B";
@@ -1183,7 +1183,6 @@ static char __pyx_k_range[] = "range";
 static char __pyx_k_tmp_w[] = "tmp_w";
 static char __pyx_k_zeros[] = "zeros";
 static char __pyx_k_Nspec2[] = "Nspec2";
-static char __pyx_k_Weight[] = "Weight";
 static char __pyx_k_alm2cl[] = "alm2cl";
 static char __pyx_k_append[] = "append";
 static char __pyx_k_healpy[] = "healpy";
@@ -1191,6 +1190,7 @@ static char __pyx_k_import[] = "__import__";
 static char __pyx_k_lmax_2[] = "lmax_";
 static char __pyx_k_mmax_2[] = "mmax_";
 static char __pyx_k_repeat[] = "repeat";
+static char __pyx_k_weight[] = "weight";
 static char __pyx_k_xrange[] = "xrange";
 static char __pyx_k_almsize[] = "almsize";
 static char __pyx_k_powspec[] = "powspec_";
@@ -1219,7 +1219,6 @@ static PyObject *__pyx_n_s_Nspec;
 static PyObject *__pyx_n_s_Nspec2;
 static PyObject *__pyx_n_s_RuntimeError;
 static PyObject *__pyx_n_s_ValueError;
-static PyObject *__pyx_n_s_Weight;
 static PyObject *__pyx_kp_s_all_alms_must_have_same_size;
 static PyObject *__pyx_n_s_alm1;
 static PyObject *__pyx_n_s_alm2;
@@ -1267,6 +1266,7 @@ static PyObject *__pyx_n_s_sqrt;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_tmp_w;
 static PyObject *__pyx_kp_u_unknown_dtype_code_in_numpy_pxd;
+static PyObject *__pyx_n_s_weight;
 static PyObject *__pyx_n_s_xrange;
 static PyObject *__pyx_n_s_zeros;
 static PyObject *__pyx_int_1;
@@ -1288,7 +1288,7 @@ static PyObject *__pyx_codeobj__12;
 /* "do_cross_cor.pyx":11
  * import cython
  * 
- * def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, Weight = None):             # <<<<<<<<<<<<<<
+ * def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, weight = None):             # <<<<<<<<<<<<<<
  *     #############################
  *     # Check alm and number of spectra
  */
@@ -1302,7 +1302,7 @@ static PyObject *__pyx_pw_12do_cross_cor_1alm2cl(PyObject *__pyx_self, PyObject 
   PyObject *__pyx_v_lmax = 0;
   PyObject *__pyx_v_mmax = 0;
   PyObject *__pyx_v_lmax_out = 0;
-  PyObject *__pyx_v_Weight = 0;
+  PyObject *__pyx_v_weight = 0;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -1310,7 +1310,7 @@ static PyObject *__pyx_pw_12do_cross_cor_1alm2cl(PyObject *__pyx_self, PyObject 
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("alm2cl (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_alms,&__pyx_n_s_alms2,&__pyx_n_s_lmax,&__pyx_n_s_mmax,&__pyx_n_s_lmax_out,&__pyx_n_s_Weight,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_alms,&__pyx_n_s_alms2,&__pyx_n_s_lmax,&__pyx_n_s_mmax,&__pyx_n_s_lmax_out,&__pyx_n_s_weight,0};
     PyObject* values[6] = {0,0,0,0,0,0};
     values[1] = ((PyObject *)Py_None);
     values[2] = ((PyObject *)Py_None);
@@ -1357,7 +1357,7 @@ static PyObject *__pyx_pw_12do_cross_cor_1alm2cl(PyObject *__pyx_self, PyObject 
         }
         case  5:
         if (kw_args > 0) {
-          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_Weight);
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_weight);
           if (value) { values[5] = value; kw_args--; }
         }
       }
@@ -1381,7 +1381,7 @@ static PyObject *__pyx_pw_12do_cross_cor_1alm2cl(PyObject *__pyx_self, PyObject 
     __pyx_v_lmax = values[2];
     __pyx_v_mmax = values[3];
     __pyx_v_lmax_out = values[4];
-    __pyx_v_Weight = values[5];
+    __pyx_v_weight = values[5];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
@@ -1391,14 +1391,14 @@ static PyObject *__pyx_pw_12do_cross_cor_1alm2cl(PyObject *__pyx_self, PyObject 
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_12do_cross_cor_alm2cl(__pyx_self, __pyx_v_alms, __pyx_v_alms2, __pyx_v_lmax, __pyx_v_mmax, __pyx_v_lmax_out, __pyx_v_Weight);
+  __pyx_r = __pyx_pf_12do_cross_cor_alm2cl(__pyx_self, __pyx_v_alms, __pyx_v_alms2, __pyx_v_lmax, __pyx_v_mmax, __pyx_v_lmax_out, __pyx_v_weight);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_alms, PyObject *__pyx_v_alms2, PyObject *__pyx_v_lmax, PyObject *__pyx_v_mmax, PyObject *__pyx_v_lmax_out, PyObject *__pyx_v_Weight) {
+static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_alms, PyObject *__pyx_v_alms2, PyObject *__pyx_v_lmax, PyObject *__pyx_v_mmax, PyObject *__pyx_v_lmax_out, PyObject *__pyx_v_weight) {
   int __pyx_v_Nspec;
   int __pyx_v_Nspec2;
   int __pyx_v_alms_lonely;
@@ -1474,7 +1474,7 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
   __Pyx_INCREF(__pyx_v_lmax);
   __Pyx_INCREF(__pyx_v_mmax);
   __Pyx_INCREF(__pyx_v_lmax_out);
-  __Pyx_INCREF(__pyx_v_Weight);
+  __Pyx_INCREF(__pyx_v_weight);
   __pyx_pybuffer_powspec_.pybuffer.buf = NULL;
   __pyx_pybuffer_powspec_.refcount = 0;
   __pyx_pybuffernd_powspec_.data = NULL;
@@ -1881,7 +1881,7 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
  *     if lmax_out is None:
  *         lmax_out = lmax             # <<<<<<<<<<<<<<
  * 
- *     if Weight is None:
+ *     if weight is None:
  */
     __Pyx_INCREF(__pyx_v_lmax);
     __Pyx_DECREF_SET(__pyx_v_lmax_out, __pyx_v_lmax);
@@ -1892,18 +1892,18 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
   /* "do_cross_cor.pyx":60
  *         lmax_out = lmax
  * 
- *     if Weight is None:             # <<<<<<<<<<<<<<
- *         Weight = np.repeat(1.+1J,alms[0].size)
+ *     if weight is None:             # <<<<<<<<<<<<<<
+ *         weight = np.repeat(1.+1J,alms[0].size)
  * 
  */
-  __pyx_t_2 = (__pyx_v_Weight == Py_None);
+  __pyx_t_2 = (__pyx_v_weight == Py_None);
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
     /* "do_cross_cor.pyx":61
  * 
- *     if Weight is None:
- *         Weight = np.repeat(1.+1J,alms[0].size)             # <<<<<<<<<<<<<<
+ *     if weight is None:
+ *         weight = np.repeat(1.+1J,alms[0].size)             # <<<<<<<<<<<<<<
  * 
  *     #######################
  */
@@ -1947,7 +1947,7 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF_SET(__pyx_v_Weight, __pyx_t_3);
+    __Pyx_DECREF_SET(__pyx_v_weight, __pyx_t_3);
     __pyx_t_3 = 0;
     goto __pyx_L18;
   }
@@ -2208,7 +2208,7 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
  *             for l in range(lmax_ + 1):
  *                 tmp_w=np.zeros( lmax + 1 )             # <<<<<<<<<<<<<<
  *                 j = alm_getidx(lmax_, l, 0)
- *                 powspec_[l] = alm1_[j].real * alm2_[j].real * Weight[j].real
+ *                 powspec_[l] = alm1_[j].real * alm2_[j].real * weight[j].real**2
  */
         __pyx_t_11 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 84; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_11);
@@ -2269,16 +2269,16 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
  *             for l in range(lmax_ + 1):
  *                 tmp_w=np.zeros( lmax + 1 )
  *                 j = alm_getidx(lmax_, l, 0)             # <<<<<<<<<<<<<<
- *                 powspec_[l] = alm1_[j].real * alm2_[j].real * Weight[j].real
- *                 tmp_w[l]=Weight[j].real
+ *                 powspec_[l] = alm1_[j].real * alm2_[j].real * weight[j].real**2
+ *                 tmp_w[l]=weight[j].real**2
  */
         __pyx_v_j = __pyx_f_12do_cross_cor_alm_getidx(__pyx_v_lmax_, __pyx_v_l, 0);
 
         /* "do_cross_cor.pyx":86
  *                 tmp_w=np.zeros( lmax + 1 )
  *                 j = alm_getidx(lmax_, l, 0)
- *                 powspec_[l] = alm1_[j].real * alm2_[j].real * Weight[j].real             # <<<<<<<<<<<<<<
- *                 tmp_w[l]=Weight[j].real
+ *                 powspec_[l] = alm1_[j].real * alm2_[j].real * weight[j].real**2             # <<<<<<<<<<<<<<
+ *                 tmp_w[l]=weight[j].real**2
  *                 limit = l if l <= mmax else mmax
  */
         __pyx_t_23 = __pyx_v_j;
@@ -2303,17 +2303,20 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
         }
         __pyx_t_12 = PyFloat_FromDouble((__Pyx_CREAL((*__Pyx_BufPtrStrided1d(__pyx_t_double_complex *, __pyx_pybuffernd_alm1_.rcbuffer->pybuffer.buf, __pyx_t_23, __pyx_pybuffernd_alm1_.diminfo[0].strides))) * __Pyx_CREAL((*__Pyx_BufPtrStrided1d(__pyx_t_double_complex *, __pyx_pybuffernd_alm2_.rcbuffer->pybuffer.buf, __pyx_t_24, __pyx_pybuffernd_alm2_.diminfo[0].strides))))); if (unlikely(!__pyx_t_12)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_12);
-        __pyx_t_10 = __Pyx_GetItemInt(__pyx_v_Weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_10 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+        __pyx_t_10 = __Pyx_GetItemInt(__pyx_v_weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_10 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
         __Pyx_GOTREF(__pyx_t_10);
         __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_real); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-        __pyx_t_10 = PyNumber_Multiply(__pyx_t_12, __pyx_t_8); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_10 = PyNumber_Power(__pyx_t_8, __pyx_int_2, Py_None); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_10);
-        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-        __pyx_t_26 = __pyx_PyFloat_AsDouble(__pyx_t_10); if (unlikely((__pyx_t_26 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_8 = PyNumber_Multiply(__pyx_t_12, __pyx_t_10); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __Pyx_GOTREF(__pyx_t_8);
+        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+        __pyx_t_26 = __pyx_PyFloat_AsDouble(__pyx_t_8); if (unlikely((__pyx_t_26 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         __pyx_t_25 = __pyx_v_l;
         __pyx_t_27 = -1;
         if (__pyx_t_25 < 0) {
@@ -2328,14 +2331,17 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
 
         /* "do_cross_cor.pyx":87
  *                 j = alm_getidx(lmax_, l, 0)
- *                 powspec_[l] = alm1_[j].real * alm2_[j].real * Weight[j].real
- *                 tmp_w[l]=Weight[j].real             # <<<<<<<<<<<<<<
+ *                 powspec_[l] = alm1_[j].real * alm2_[j].real * weight[j].real**2
+ *                 tmp_w[l]=weight[j].real**2             # <<<<<<<<<<<<<<
  *                 limit = l if l <= mmax else mmax
  *                 for m in range(1, limit + 1):
  */
-        __pyx_t_10 = __Pyx_GetItemInt(__pyx_v_Weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_10 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+        __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_8 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+        __Pyx_GOTREF(__pyx_t_8);
+        __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_real); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_10);
-        __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_real); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+        __pyx_t_8 = PyNumber_Power(__pyx_t_10, __pyx_int_2, Py_None); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
         __pyx_t_26 = __pyx_PyFloat_AsDouble(__pyx_t_8); if (unlikely((__pyx_t_26 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -2353,8 +2359,8 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
         *__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_tmp_w.rcbuffer->pybuffer.buf, __pyx_t_27, __pyx_pybuffernd_tmp_w.diminfo[0].strides) = __pyx_t_26;
 
         /* "do_cross_cor.pyx":88
- *                 powspec_[l] = alm1_[j].real * alm2_[j].real * Weight[j].real
- *                 tmp_w[l]=Weight[j].real
+ *                 powspec_[l] = alm1_[j].real * alm2_[j].real * weight[j].real**2
+ *                 tmp_w[l]=weight[j].real**2
  *                 limit = l if l <= mmax else mmax             # <<<<<<<<<<<<<<
  *                 for m in range(1, limit + 1):
  *                     j = alm_getidx(lmax_, l, m)
@@ -2374,11 +2380,11 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
         __pyx_v_limit = __pyx_t_28;
 
         /* "do_cross_cor.pyx":89
- *                 tmp_w[l]=Weight[j].real
+ *                 tmp_w[l]=weight[j].real**2
  *                 limit = l if l <= mmax else mmax
  *                 for m in range(1, limit + 1):             # <<<<<<<<<<<<<<
  *                     j = alm_getidx(lmax_, l, m)
- *                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * Weight[j].real +  alm1_[j].imag * alm2_[j].imag * Weight[j].imag)
+ *                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * weight[j].real**2 +  alm1_[j].imag * alm2_[j].imag * weight[j].imag**2)
  */
         __pyx_t_30 = (__pyx_v_limit + 1);
         for (__pyx_t_28 = 1; __pyx_t_28 < __pyx_t_30; __pyx_t_28+=1) {
@@ -2388,16 +2394,16 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
  *                 limit = l if l <= mmax else mmax
  *                 for m in range(1, limit + 1):
  *                     j = alm_getidx(lmax_, l, m)             # <<<<<<<<<<<<<<
- *                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * Weight[j].real +  alm1_[j].imag * alm2_[j].imag * Weight[j].imag)
- *                     tmp_w[l]+= 2 * ( Weight[j].real + Weight[j].imag)
+ *                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * weight[j].real**2 +  alm1_[j].imag * alm2_[j].imag * weight[j].imag**2)
+ *                     tmp_w[l]+= ( weight[j].real**2 + weight[j].imag**2)
  */
           __pyx_v_j = __pyx_f_12do_cross_cor_alm_getidx(__pyx_v_lmax_, __pyx_v_l, __pyx_v_m);
 
           /* "do_cross_cor.pyx":91
  *                 for m in range(1, limit + 1):
  *                     j = alm_getidx(lmax_, l, m)
- *                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * Weight[j].real +  alm1_[j].imag * alm2_[j].imag * Weight[j].imag)             # <<<<<<<<<<<<<<
- *                     tmp_w[l]+= 2 * ( Weight[j].real + Weight[j].imag)
+ *                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * weight[j].real**2 +  alm1_[j].imag * alm2_[j].imag * weight[j].imag**2)             # <<<<<<<<<<<<<<
+ *                     tmp_w[l]+= ( weight[j].real**2 + weight[j].imag**2)
  *                 powspec_[l] /= tmp_w[l]
  */
           __pyx_t_29 = __pyx_v_j;
@@ -2422,15 +2428,18 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
           }
           __pyx_t_10 = PyFloat_FromDouble((__Pyx_CREAL((*__Pyx_BufPtrStrided1d(__pyx_t_double_complex *, __pyx_pybuffernd_alm1_.rcbuffer->pybuffer.buf, __pyx_t_29, __pyx_pybuffernd_alm1_.diminfo[0].strides))) * __Pyx_CREAL((*__Pyx_BufPtrStrided1d(__pyx_t_double_complex *, __pyx_pybuffernd_alm2_.rcbuffer->pybuffer.buf, __pyx_t_31, __pyx_pybuffernd_alm2_.diminfo[0].strides))))); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_10);
-          __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_Weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_8 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+          __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_8 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
           __Pyx_GOTREF(__pyx_t_8);
           __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_real); if (unlikely(!__pyx_t_12)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-          __pyx_t_8 = PyNumber_Multiply(__pyx_t_10, __pyx_t_12); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_8 = PyNumber_Power(__pyx_t_12, __pyx_int_2, Py_None); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_8);
-          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+          __pyx_t_12 = PyNumber_Multiply(__pyx_t_10, __pyx_t_8); if (unlikely(!__pyx_t_12)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __Pyx_GOTREF(__pyx_t_12);
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
           __pyx_t_32 = __pyx_v_j;
           __pyx_t_33 = -1;
           if (__pyx_t_32 < 0) {
@@ -2451,26 +2460,29 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
             __Pyx_RaiseBufferIndexError(__pyx_t_34);
             {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           }
-          __pyx_t_12 = PyFloat_FromDouble((__Pyx_CIMAG((*__Pyx_BufPtrStrided1d(__pyx_t_double_complex *, __pyx_pybuffernd_alm1_.rcbuffer->pybuffer.buf, __pyx_t_32, __pyx_pybuffernd_alm1_.diminfo[0].strides))) * __Pyx_CIMAG((*__Pyx_BufPtrStrided1d(__pyx_t_double_complex *, __pyx_pybuffernd_alm2_.rcbuffer->pybuffer.buf, __pyx_t_33, __pyx_pybuffernd_alm2_.diminfo[0].strides))))); if (unlikely(!__pyx_t_12)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-          __Pyx_GOTREF(__pyx_t_12);
-          __pyx_t_10 = __Pyx_GetItemInt(__pyx_v_Weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_10 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+          __pyx_t_8 = PyFloat_FromDouble((__Pyx_CIMAG((*__Pyx_BufPtrStrided1d(__pyx_t_double_complex *, __pyx_pybuffernd_alm1_.rcbuffer->pybuffer.buf, __pyx_t_32, __pyx_pybuffernd_alm1_.diminfo[0].strides))) * __Pyx_CIMAG((*__Pyx_BufPtrStrided1d(__pyx_t_double_complex *, __pyx_pybuffernd_alm2_.rcbuffer->pybuffer.buf, __pyx_t_33, __pyx_pybuffernd_alm2_.diminfo[0].strides))))); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __Pyx_GOTREF(__pyx_t_8);
+          __pyx_t_10 = __Pyx_GetItemInt(__pyx_v_weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_10 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
           __Pyx_GOTREF(__pyx_t_10);
           __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_imag); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __pyx_t_10 = PyNumber_Multiply(__pyx_t_12, __pyx_t_11); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_10 = PyNumber_Power(__pyx_t_11, __pyx_int_2, Py_None); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_10);
-          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-          __pyx_t_11 = PyNumber_Add(__pyx_t_8, __pyx_t_10); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_11 = PyNumber_Multiply(__pyx_t_8, __pyx_t_10); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __pyx_t_10 = PyNumber_Multiply(__pyx_int_2, __pyx_t_11); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_10 = PyNumber_Add(__pyx_t_12, __pyx_t_11); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_10);
+          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-          __pyx_t_26 = __pyx_PyFloat_AsDouble(__pyx_t_10); if (unlikely((__pyx_t_26 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_11 = PyNumber_Multiply(__pyx_int_2, __pyx_t_10); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __Pyx_GOTREF(__pyx_t_11);
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          __pyx_t_26 = __pyx_PyFloat_AsDouble(__pyx_t_11); if (unlikely((__pyx_t_26 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
           __pyx_t_34 = __pyx_v_l;
           __pyx_t_35 = -1;
           if (__pyx_t_34 < 0) {
@@ -2485,30 +2497,33 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
 
           /* "do_cross_cor.pyx":92
  *                     j = alm_getidx(lmax_, l, m)
- *                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * Weight[j].real +  alm1_[j].imag * alm2_[j].imag * Weight[j].imag)
- *                     tmp_w[l]+= 2 * ( Weight[j].real + Weight[j].imag)             # <<<<<<<<<<<<<<
+ *                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * weight[j].real**2 +  alm1_[j].imag * alm2_[j].imag * weight[j].imag**2)
+ *                     tmp_w[l]+= ( weight[j].real**2 + weight[j].imag**2)             # <<<<<<<<<<<<<<
  *                 powspec_[l] /= tmp_w[l]
  *             spectra.append(powspec_)
  */
-          __pyx_t_10 = __Pyx_GetItemInt(__pyx_v_Weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_10 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
-          __Pyx_GOTREF(__pyx_t_10);
-          __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_real); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_11 = __Pyx_GetItemInt(__pyx_v_weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_11 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
           __Pyx_GOTREF(__pyx_t_11);
-          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __pyx_t_10 = __Pyx_GetItemInt(__pyx_v_Weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_10 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
-          __Pyx_GOTREF(__pyx_t_10);
-          __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_imag); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-          __Pyx_GOTREF(__pyx_t_8);
-          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __pyx_t_10 = PyNumber_Add(__pyx_t_11, __pyx_t_8); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_real); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_10);
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-          __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-          __pyx_t_8 = PyNumber_Multiply(__pyx_int_2, __pyx_t_10); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-          __Pyx_GOTREF(__pyx_t_8);
+          __pyx_t_11 = PyNumber_Power(__pyx_t_10, __pyx_int_2, Py_None); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __Pyx_GOTREF(__pyx_t_11);
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __pyx_t_26 = __pyx_PyFloat_AsDouble(__pyx_t_8); if (unlikely((__pyx_t_26 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-          __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+          __pyx_t_10 = __Pyx_GetItemInt(__pyx_v_weight, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(__pyx_t_10 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+          __Pyx_GOTREF(__pyx_t_10);
+          __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_imag); if (unlikely(!__pyx_t_12)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __Pyx_GOTREF(__pyx_t_12);
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          __pyx_t_10 = PyNumber_Power(__pyx_t_12, __pyx_int_2, Py_None); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __Pyx_GOTREF(__pyx_t_10);
+          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+          __pyx_t_12 = PyNumber_Add(__pyx_t_11, __pyx_t_10); if (unlikely(!__pyx_t_12)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __Pyx_GOTREF(__pyx_t_12);
+          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          __pyx_t_26 = __pyx_PyFloat_AsDouble(__pyx_t_12); if (unlikely((__pyx_t_26 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           __pyx_t_35 = __pyx_v_l;
           __pyx_t_36 = -1;
           if (__pyx_t_35 < 0) {
@@ -2523,8 +2538,8 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
         }
 
         /* "do_cross_cor.pyx":93
- *                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * Weight[j].real +  alm1_[j].imag * alm2_[j].imag * Weight[j].imag)
- *                     tmp_w[l]+= 2 * ( Weight[j].real + Weight[j].imag)
+ *                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * weight[j].real**2 +  alm1_[j].imag * alm2_[j].imag * weight[j].imag**2)
+ *                     tmp_w[l]+= ( weight[j].real**2 + weight[j].imag**2)
  *                 powspec_[l] /= tmp_w[l]             # <<<<<<<<<<<<<<
  *             spectra.append(powspec_)
  * 
@@ -2553,7 +2568,7 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
       }
 
       /* "do_cross_cor.pyx":94
- *                     tmp_w[l]+= 2 * ( Weight[j].real + Weight[j].imag)
+ *                     tmp_w[l]+= ( weight[j].real**2 + weight[j].imag**2)
  *                 powspec_[l] /= tmp_w[l]
  *             spectra.append(powspec_)             # <<<<<<<<<<<<<<
  * 
@@ -2614,7 +2629,7 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
   /* "do_cross_cor.pyx":11
  * import cython
  * 
- * def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, Weight = None):             # <<<<<<<<<<<<<<
+ * def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, weight = None):             # <<<<<<<<<<<<<<
  *     #############################
  *     # Check alm and number of spectra
  */
@@ -2654,7 +2669,7 @@ static PyObject *__pyx_pf_12do_cross_cor_alm2cl(CYTHON_UNUSED PyObject *__pyx_se
   __Pyx_XDECREF(__pyx_v_lmax);
   __Pyx_XDECREF(__pyx_v_mmax);
   __Pyx_XDECREF(__pyx_v_lmax_out);
-  __Pyx_XDECREF(__pyx_v_Weight);
+  __Pyx_XDECREF(__pyx_v_weight);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
@@ -4923,7 +4938,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_Nspec2, __pyx_k_Nspec2, sizeof(__pyx_k_Nspec2), 0, 0, 1, 1},
   {&__pyx_n_s_RuntimeError, __pyx_k_RuntimeError, sizeof(__pyx_k_RuntimeError), 0, 0, 1, 1},
   {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
-  {&__pyx_n_s_Weight, __pyx_k_Weight, sizeof(__pyx_k_Weight), 0, 0, 1, 1},
   {&__pyx_kp_s_all_alms_must_have_same_size, __pyx_k_all_alms_must_have_same_size, sizeof(__pyx_k_all_alms_must_have_same_size), 0, 0, 1, 0},
   {&__pyx_n_s_alm1, __pyx_k_alm1, sizeof(__pyx_k_alm1), 0, 0, 1, 1},
   {&__pyx_n_s_alm2, __pyx_k_alm2, sizeof(__pyx_k_alm2), 0, 0, 1, 1},
@@ -4971,6 +4985,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_s_tmp_w, __pyx_k_tmp_w, sizeof(__pyx_k_tmp_w), 0, 0, 1, 1},
   {&__pyx_kp_u_unknown_dtype_code_in_numpy_pxd, __pyx_k_unknown_dtype_code_in_numpy_pxd, sizeof(__pyx_k_unknown_dtype_code_in_numpy_pxd), 0, 1, 0, 0},
+  {&__pyx_n_s_weight, __pyx_k_weight, sizeof(__pyx_k_weight), 0, 0, 1, 1},
   {&__pyx_n_s_xrange, __pyx_k_xrange, sizeof(__pyx_k_xrange), 0, 0, 1, 1},
   {&__pyx_n_s_zeros, __pyx_k_zeros, sizeof(__pyx_k_zeros), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
@@ -5106,11 +5121,11 @@ static int __Pyx_InitCachedConstants(void) {
   /* "do_cross_cor.pyx":11
  * import cython
  * 
- * def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, Weight = None):             # <<<<<<<<<<<<<<
+ * def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, weight = None):             # <<<<<<<<<<<<<<
  *     #############################
  *     # Check alm and number of spectra
  */
-  __pyx_tuple__11 = PyTuple_Pack(24, __pyx_n_s_alms, __pyx_n_s_alms2, __pyx_n_s_lmax, __pyx_n_s_mmax, __pyx_n_s_lmax_out, __pyx_n_s_Weight, __pyx_n_s_Nspec, __pyx_n_s_Nspec2, __pyx_n_s_alms_lonely, __pyx_n_s_almsize, __pyx_n_s_i, __pyx_n_s_j, __pyx_n_s_l, __pyx_n_s_m, __pyx_n_s_limit, __pyx_n_s_lmax_2, __pyx_n_s_mmax_2, __pyx_n_s_lmax_out_2, __pyx_n_s_powspec, __pyx_n_s_alm1, __pyx_n_s_alm2, __pyx_n_s_tmp_w, __pyx_n_s_n, __pyx_n_s_spectra); if (unlikely(!__pyx_tuple__11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__11 = PyTuple_Pack(24, __pyx_n_s_alms, __pyx_n_s_alms2, __pyx_n_s_lmax, __pyx_n_s_mmax, __pyx_n_s_lmax_out, __pyx_n_s_weight, __pyx_n_s_Nspec, __pyx_n_s_Nspec2, __pyx_n_s_alms_lonely, __pyx_n_s_almsize, __pyx_n_s_i, __pyx_n_s_j, __pyx_n_s_l, __pyx_n_s_m, __pyx_n_s_limit, __pyx_n_s_lmax_2, __pyx_n_s_mmax_2, __pyx_n_s_lmax_out_2, __pyx_n_s_powspec, __pyx_n_s_alm1, __pyx_n_s_alm2, __pyx_n_s_tmp_w, __pyx_n_s_n, __pyx_n_s_spectra); if (unlikely(!__pyx_tuple__11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__11);
   __Pyx_GIVEREF(__pyx_tuple__11);
   __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(6, 0, 24, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_home_matthew_work_src_python_do, __pyx_n_s_alm2cl, 11, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -5265,7 +5280,7 @@ PyMODINIT_FUNC PyInit_do_cross_cor(void)
   /* "do_cross_cor.pyx":11
  * import cython
  * 
- * def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, Weight = None):             # <<<<<<<<<<<<<<
+ * def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, weight = None):             # <<<<<<<<<<<<<<
  *     #############################
  *     # Check alm and number of spectra
  */
