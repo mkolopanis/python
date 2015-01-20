@@ -58,7 +58,7 @@ def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, Weight =
         lmax_out = lmax
 
     if Weight is None:
-        Weight = np.repeat(1.,alms[0].size)
+        Weight = np.repeat(1.+1J,alms[0].size)
 
     #######################
     # Computing the spectra
@@ -70,7 +70,7 @@ def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, Weight =
     cdef np.ndarray[double, ndim=1] powspec_
     cdef np.ndarray[np.complex128_t, ndim=1] alm1_
     cdef np.ndarray[np.complex128_t, ndim=1] alm2_
-
+    cdef np.ndarray[double,ndim=1] tmp_w
 
     for n in xrange(Nspec): 
         for m in xrange(0,Nspec-n):
@@ -81,13 +81,16 @@ def alm2cl(alms,alms2 = None, lmax = None, mmax = None, lmax_out= None, Weight =
             # compute cross-spectrum alm1[n] x alm2[n+m]
             # and place result in result list
             for l in range(lmax_ + 1):
+                tmp_w=np.zeros( lmax + 1 )
                 j = alm_getidx(lmax_, l, 0)
-                powspec_[l] = alm1_[j].real * alm2_[j].real*Weight[j].real
+                powspec_[l] = alm1_[j].real * alm2_[j].real * Weight[j].real
+                tmp_w[l]=Weight[j].real
                 limit = l if l <= mmax else mmax
                 for m in range(1, limit + 1):
                     j = alm_getidx(lmax_, l, m)
                     powspec_[l] += 2 * (alm1_[j].real * alm2_[j].real * Weight[j].real +  alm1_[j].imag * alm2_[j].imag * Weight[j].imag)
-                powspec_[l] /= (2 * l + 1)
+                    tmp_w[l]+= 2 * ( Weight[j].real + Weight[j].imag)
+                powspec_[l] /= tmp_w[l]
             spectra.append(powspec_)
 
     if alms_lonely:
