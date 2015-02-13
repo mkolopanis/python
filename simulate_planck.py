@@ -14,9 +14,12 @@ def main():
 	
 	##Define Parameters used to simulate Planck Fields
 	bands=np.array([30.,44.,70.,100.,143.,217.,353.])
-	beam_fwhm=np.array([33.,24.,14.,10.,7.1,5.0,5.0])
-	noise_const_temp=np.array([2.0,2.7,4.7,2.5,2.2,4.8,14.7])*2.7255e-6/2.
-	noise_const_pol=np.array([2.8,3.9,6.7,4.0,4.2,9.8,29.8])*2.7255e-6/2.
+	#beam_fwhm=np.array([33.,24.,14.,10.,7.1,5.0,5.0])
+	beam_fwhm=np.array([32.29,27,13.21,9.67,7.26,4.96,4.93])
+	#noise_const_temp=np.array([2.0,2.7,4.7,2.5,2.2,4.8,14.7])*2.7255e-6/2.
+	#noise_const_pol=np.array([2.8,3.9,6.7,4.0,4.2,9.8,29.8])*2.7255e-6/2.
+	noise_const_temp=np.array([2.5,2.7,3.5,1.29,.555,.78,2.56])*60.e-6
+	noise_const_pol=np.array([3.5,4.0,5.0,1.96,1.17,1.75,7.31])*60e-6
 	nside=2048
 	npix=hp.nside2npix(nside)
 	pix_area=hp.nside2pixarea(nside)
@@ -55,7 +58,7 @@ def main():
 			npix=hp.nside2npix(1024)
 			simul_cmb=hp.ud_grade(simul_cmb,nside)
 			alpha_radio=hp.ud_grade(alpha_radio,nside)
-			pix_area=np.nside2pixarea(nside)
+			pix_area=hp.nside2pixarea(nside)
 		
 		tmp_cmb=rotate_tqu(simul_cmb,wl[i],alpha_radio);
 		tmp_didqdu=np.array([np.random.normal(0,1,npix)*noise_const_temp[i], np.random.normal(0,1,npix)*noise_const_pol[i] , np.random.normal(0,1,npix)*noise_const_pol[i]])
@@ -115,10 +118,8 @@ def main():
 		tblist.writeto(output_prefix+'planck_simulated_{0:0>3.0f}.fits'.format(bands[i]),clobber=True)
 		print "planck_simulated_{:0>3.0f}.fits".format(bands[i])
 		print "Nside = {:0>4d}".format(nside)
-		if i == LFI_IND:
+		if i+1 >= LFI_IND:
 			LFI=True
-		else:
-			LFI=False
 
 
 if __name__ == '__main__':
