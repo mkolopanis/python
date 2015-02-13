@@ -1,5 +1,6 @@
 import matplotlib
 matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
 import healpy as hp
 from astropy.io import fits
@@ -11,13 +12,14 @@ import subprocess
 import json
 import rotate_tqu
 from colorama import Fore, Back, Style
+from scipy import linalg as lin
 
 ##Global smoothing size parameter##
 
 smoothing_scale=30.0
 ###map_bl=hp.gauss_beam(np.sqrt(hp.nside2pixarea(128)+hp.nside2pixarea(1024)),383)
 
-def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,weight=None):
+def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False):
 	print "Computing Cross Correlations for Bands "+str(bands)
 
 	q_fwhm=[27.3,11.7]
@@ -96,17 +98,13 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,
 	Ndu_array=[]
 	Nau_array=[]
 	Naq_array=[]
-	Bl_factor=np.repeat(1,3*128)
+	Bl_factor=np.repeat(1.,3*128)
 	l=np.arange(3*128)
 	#ipdb.set_trace()
-	Weight1=np.repeat(1,len(iqu_band_i[0]))
-	Weight2=np.repeat(1,len(iqu_band_i[0]))
-	if weight:
-		Weight1=(iqu_band_i[1]**2+iqu_band_i[2]**2)/(sigma_u_i[0]**2+sigma_q_i[1]**2)
-		Weight2=(iqu_band_j[1]**2+iqu_band_i[2]**2)/(sigma_u_j[0]**2+sigma_q_j[1]**2)
 	if beam:
-		Bl_factor=hp.gauss_beam(smoothing_scale*(np.pi/180.*60.),383)
+		Bl_factor=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)
 	pix_area=hp.nside2pixarea(128)
+	#ipdb.set_trace()
 	for field1 in xrange(1):
 		mask_bool1=np.repeat(True,len(Delta_Q))
 		pix_cmb1=field_pixels.field(field1)	
@@ -129,16 +127,16 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,
 		alpham.mask=mask_bool1
 		um.mask=mask_bool1
 		qm.mask=mask_bool1
-
-		cross1_array.append(hp.anafast(DQm*Weight1,map2=aUm*Weight1)/Bl_factor**2)
-		cross2_array.append(hp.anafast(DUm*Weight1,map2=aQm*Weight1)/Bl_factor**2)
+		#ipdb.set_trace()
+		cross1_array.append(hp.anafast(DQm,map2=aUm)/Bl_factor**2)
+		cross2_array.append(hp.anafast(DUm,map2=aQm)/Bl_factor**2)
 		
 
 		##calculate theoretical variance for correlations
-		Ndq_array.append((abs(Weight1*(sqi-sqj))**2).sum()*(pix_area/const)**2/(4.*np.pi))
-		Ndu_array.append((abs(Weight1*(sui-suj))**2).sum()*(pix_area/const)**2/(4.*np.pi))
-		Nau_array.append((abs(Weight1*(salpha*um+alpham*suj+salpha*suj))**2).sum()*pix_area**2/(4.*np.pi))
-		Naq_array.append((abs(Weight1*(salpha*qm+alpham*sqj+salpha*sqj))**2).sum()*pix_area**2/(4.*np.pi))
+		Ndq_array.append((abs((sqi-sqj))**2).sum()*(pix_area/const)**2/(4.*np.pi))
+		Ndu_array.append((abs((sui-suj))**2).sum()*(pix_area/const)**2/(4.*np.pi))
+		Nau_array.append((abs((salpha*um+alpham*suj+salpha*suj))**2).sum()*pix_area**2/(4.*np.pi))
+		Naq_array.append((abs((salpha*qm+alpham*sqj+salpha*sqj))**2).sum()*pix_area**2/(4.*np.pi))
 		#ipdb.set_trace()
 		
         
@@ -162,7 +160,7 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,
 
 	return (cross1,cross2,N_dq,N_du,N_au,N_aq)
 
-def faraday_noise_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,weight=None):
+def faraday_noise_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False):
 	print "Computing Cross Correlations for Bands "+str(bands)
 
 
@@ -181,8 +179,6 @@ def faraday_noise_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,weig
 	hdu_i.close()
 	hdu_j.close()
 	
-	Weight1=(iqu_band_i[1]**2+iqu_band_i[2]**2)/(sigma_i[0]**2+sigma_i[1]**2)
-	Weight2=(iqu_band_j[1]**2+iqu_band_i[2]**2)/(sigma_j[0]**2+sigma_j[1]**2)
 	iqu_band_i=np.zeros((3,npix))	
 	iqu_band_j=np.zeros((3,npix))	
 	iqu_band_i[1]=sigma_i[0]
@@ -197,14 +193,8 @@ def faraday_noise_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,weig
 	iqu_band_i=hp.ud_grade(iqu_band_i,nside_out=128,order_in='ring')
 	iqu_band_j=hp.ud_grade(iqu_band_j,nside_out=128,order_in='ring')
 	
-	Weight1=np.repeat(1,len(iqu_band_i[0]))
-	Weight2=np.repeat(1,len(iqu_band_i[0]))
-	if weight:
-		Weight1=hp.smoothing(Weight1,fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[0])**2)*np.pi/(180.*60.),verbose=False)	
-		Weight2=hp.smoothing(Weight2,fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[1])**2)*np.pi/(180.*60.),verbose=False)	
-	
-	Weight1=hp.ud_grade(Weight1,128)
-	Weight2=hp.ud_grade(Weight2,128)
+	Weight1=np.repeat(1.,len(iqu_band_i[0]))
+	Weight2=np.repeat(1.,len(iqu_band_i[0]))
 	
 	const=2.*(wl_i**2-wl_j**2)	
 
@@ -220,7 +210,7 @@ def faraday_noise_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,weig
 	cross1_array=[]
 	cross2_array=[]
 	
-	Bl_factor=np.repeat(1,3*128)
+	Bl_factor=np.repeat(1.,3*128)
 	if beam:
 		Bl_factor=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)
 	for field1 in xrange(1):
@@ -239,8 +229,8 @@ def faraday_noise_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,weig
 		aUm.mask=mask_bool1
 
 		
-		cross1_array.append(hp.anafast(DQm*Weight1,map2=aUm*Weight1)/Bl_factor**2)
-		cross2_array.append(hp.anafast(DUm*Weight1,map2=aQm*Weight1)/Bl_factor**2)
+		cross1_array.append(hp.anafast(DQm,map2=aUm)/Bl_factor**2)
+		cross2_array.append(hp.anafast(DUm,map2=aQm)/Bl_factor**2)
 	
 	#cross1=np.mean(cross1_array,axis=0)	##Average over all Cross Spectra
 	#cross2=np.mean(cross2_array,axis=0)	##Average over all Cross Spectra
@@ -250,7 +240,7 @@ def faraday_noise_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,weig
 	hp.write_cl('cl_'+bands+'_FR_noise_UxaQ.fits',cross2)
 	return (cross1,cross2)
 
-def faraday_theory_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands_name,beam=False,weight=None):
+def faraday_theory_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands_name,beam=False):
 	print "Computing Cross Correlations for Bands "+str(bands_name)
 
 	radio_file='/data/wmap/faraday_MW_realdata.fits'
@@ -312,12 +302,7 @@ def faraday_theory_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands_name,beam=Fals
 	cross1_array=[]
 	cross2_array=[]
 
-	Weight1=np.repeat(1,len(iqu_band_i[0]))
-	if weight:
-		Weight1=(iqu_band_i[1]**2+iqu_band_i[2]**2)/(sigma_i[0]**2+sigma_i[1]**2)
-		Weight2=(iqu_band_j[1]**2+iqu_band_i[2]**2)/(sigma_j[0]**2+sigma_j[1]**2)
-	
-	Bl_factor=np.repeat(1,3*128)
+	Bl_factor=np.repeat(1.,3*128)
 	if beam:
 		Bl_factor=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)
 	for field1 in xrange(1):
@@ -335,9 +320,9 @@ def faraday_theory_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands_name,beam=Fals
 		aQm.mask=mask_bool1
 		aUm.mask=mask_bool1
 
-		
-		cross1_array.append(hp.anafast(DQm*Weight1,map2=aUm*Weight1)/Bl_factor**2)
-		cross2_array.append(hp.anafast(DUm*Weight1,map2=aQm*Weight1)/Bl_factor**2)
+		#ipdb.set_trace()	
+		cross1_array.append(hp.anafast(DQm,map2=aUm)/Bl_factor**2)
+		cross2_array.append(hp.anafast(DUm,map2=aQm)/Bl_factor**2)
 	
 	#cross1=np.mean(cross1_array,axis=0)	##Average over all Cross Spectra
 	#cross2=np.mean(cross2_array,axis=0)	##Average over all Cross Spectra
@@ -379,13 +364,13 @@ def plot_mc():
 	Ndu_array_in=json.load(f)
 	f.close()	
 	
-	bins=[1,5,10,20,50]
+	bins=[1,5,10,20,25,50]
+	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)
 	fsky=225.*(np.pi/180.)**2/(4*np.pi)
 	l=np.arange(len(cross1_array_in[0]))
 	ll=l*(l+1)/(2*np.pi)
 	L=np.sqrt(fsky*4*np.pi)
 	dl_eff=2*np.pi/L
-	
 	for b in bins:
 		N_dq=np.mean(Ndq_array_in)
 		N_au=np.mean(Nau_array_in)
@@ -404,8 +389,8 @@ def plot_mc():
         	cross2_array=[]
         	noise1_array=[]
         	noise2_array=[]
-        	
-		Ndq_array=[]
+                    	
+            	Ndq_array=[]
         	Ndu_array=[]
         	Nau_array=[]
         	Naq_array=[]
@@ -413,12 +398,12 @@ def plot_mc():
 		plot_l=[]
 		if( b != 1):
 	        	for n in xrange(len(cross1_array_in)):
-	        	        tmp_t1=bin_llcl.bin_llcl(ll*theory1_array_in[n],b)
-	        	        tmp_t2=bin_llcl.bin_llcl(ll*theory2_array_in[n],b)
-				tmp_c1=bin_llcl.bin_llcl(ll*cross1_array_in[n],b)
-	        	        tmp_c2=bin_llcl.bin_llcl(ll*cross2_array_in[n],b)
-				tmp_n1=bin_llcl.bin_llcl(ll*noise1_array_in[n],b)
-	        	        tmp_n2=bin_llcl.bin_llcl(ll*noise2_array_in[n],b)
+	        	        tmp_t1=bin_llcl.bin_llcl(ll*theory1_array_in[n]/bls,b)
+	        	        tmp_t2=bin_llcl.bin_llcl(ll*theory2_array_in[n]/bls,b)
+				tmp_c1=bin_llcl.bin_llcl(ll*cross1_array_in[n]/bls,b)
+	        	        tmp_c2=bin_llcl.bin_llcl(ll*cross2_array_in[n]/bls,b)
+				tmp_n1=bin_llcl.bin_llcl(ll*noise1_array_in[n]/bls,b)
+	        	        tmp_n2=bin_llcl.bin_llcl(ll*noise2_array_in[n]/bls,b)
 	        	        
 				theory1_array.append(tmp_t1['llcl'])
 				theory2_array.append(tmp_t2['llcl'])
@@ -431,52 +416,120 @@ def plot_mc():
 	        	        
 				if n == len(cross1_array_in)-1:
 	        	                plot_l=tmp_c1['l_out']
-			tmp_c1=bin_llcl.bin_llcl(ll*cosmic1,b)
-			tmp_d1=bin_llcl.bin_llcl(ll*delta1,b)
+			tmp_c1=bin_llcl.bin_llcl(ll*cosmic1/bls,b)
+			tmp_d1=bin_llcl.bin_llcl(ll*delta1/bls,b)
 		
 			cosmic1=tmp_c1['llcl']
 			delta1=tmp_d1['llcl']
 
-			tmp_c2=bin_llcl.bin_llcl(ll*cosmic2,b)
-			tmp_d2=bin_llcl.bin_llcl(ll*delta2,b)
+			tmp_c2=bin_llcl.bin_llcl(ll*cosmic2/bls,b)
+			tmp_d2=bin_llcl.bin_llcl(ll*delta2/bls,b)
 			cosmic2=tmp_c2['llcl']
 			delta2=tmp_d2['llcl']
 			
 		else:
 			plot_l=l
-			theory1_array=np.multiply(ll,theory1_array_in)
-			cross1_array=np.multiply(ll,cross1_array_in)
-			noise1_array=np.multiply(ll,noise1_array_in)
-			theory2_array=np.multiply(ll,theory2_array_in)
-			cross2_array=np.multiply(ll,cross2_array_in)
-			noise2_array=np.multiply(ll,noise2_array_in)
-			cosmic1*=ll
-			cosmic2*=ll
-			delta1*=ll
-			delta2*=ll
-	
-		theory1=np.mean(theory1_array,axis=0)
-		dtheory1=np.std(theory1_array,axis=0,ddof=1)
-		cross1=np.mean(cross1_array,axis=0)
+			theory1_array=np.multiply(ll/bls,theory1_array_in)
+			cross1_array=np.multiply(ll/bls,cross1_array_in)
+			noise1_array=np.multiply(ll/bls,noise1_array_in)
+			theory2_array=np.multiply(ll/bls,theory2_array_in)
+			cross2_array=np.multiply(ll/bls,cross2_array_in)
+			noise2_array=np.multiply(ll/bls,noise2_array_in)
+			cosmic1*=ll/bls
+			cosmic2*=ll/bls
+			delta1*=ll/bls
+			delta2*=ll/bls
+		bad=np.where(plot_l < 24)
 		noise1=np.mean(noise1_array,axis=0)
-		dcross1=np.std(np.subtract(cross1_array,noise1),axis=0,ddof=1)
-		#ipdb.set_trace()
-		plot_binned.plotBinned((cross1-noise1)*1e12,dcross1*1e12,plot_l,b,'Cross_43x95_FR_QxaU', title='Cross 43x95 FR QxaU',theory=theory1*1e12,dtheory=dtheory1*1e12,delta=delta1*1e12,cosmic=cosmic1*1e12)
-
-		theory2=np.mean(theory2_array,axis=0)
-		dtheory2=np.std(theory2_array,axis=0,ddof=1)
-		cross2=np.mean(cross2_array,axis=0)
-		#delta2=np.mean(delta2_array,axis=0)
 		noise2=np.mean(noise2_array,axis=0)
-		dcross2=np.std(np.subtract(cross2_array,noise2),axis=0,ddof=1)
+        	theory_array = np.add(theory1_array,theory2_array)
+        	theory=np.mean(theory_array,axis=0)
+        	dtheory=np.std(theory_array,axis=0,ddof=1)
+        	cross_array = np.add(np.subtract(cross1_array,noise1),np.subtract(cross2_array,noise2))
+        	cross=np.mean(cross_array,axis=0)
+        	dcross=np.std(cross_array,axis=0,ddof=1)
+        	cosmic=np.sqrt(cosmic1**2+cosmic2**2)
+        	delta=np.sqrt(delta1**2+delta2**2)
+
+		#theory1=np.mean(theory1_array,axis=0)
+		#dtheory1=np.std(theory1_array,axis=0,ddof=1)
+		#cross1=np.mean(cross1_array,axis=0)
+		#dcross1=np.std(np.subtract(cross1_array,noise1),axis=0,ddof=1)
 		#ipdb.set_trace()
-		plot_binned.plotBinned((cross2-noise2)*1e12,dcross2*1e12,plot_l,b,'Cross_43x95_FR_UxaQ', title='Cross 43x95 FR UxaQ',theory=theory2*1e12,dtheory=dtheory2*1e12,delta=delta2*1e12,cosmic=cosmic2*1e12)
+		plot_binned.plotBinned((cross)*1e12,dcross*1e12,plot_l,b,'Cross_43x95_FR_', title='Cross 43x95 FR Correlator',theory=theory*1e12,dtheory=dtheory*1e12,delta=delta*1e12,cosmic=cosmic*1e12)
+
+		#theory2=np.mean(theory2_array,axis=0)
+		#dtheory2=np.std(theory2_array,axis=0,ddof=1)
+		#cross2=np.mean(cross2_array,axis=0)
+		##delta2=np.mean(delta2_array,axis=0)
+		#dcross2=np.std(np.subtract(cross2_array,noise2),axis=0,ddof=1)
+		##ipdb.set_trace()
+		#plot_binned.plotBinned((cross2-noise2)*1e12,dcross2*1e12,plot_l,b,'Cross_43x95_FR_UxaQ', title='Cross 43x95 FR UxaQ',theory=theory2*1e12,dtheory=dtheory2*1e12,delta=delta2*1e12,cosmic=cosmic2*1e12)
 		#ipdb.set_trace()
-	
+    
+		if b == 25 :
+			a_scales=np.linspace(-2,4,121)
+			chi_array=[]
+			for a in a_scales:
+				chi_array.append(np.sum( (cross - a*theory)**2/(dcross)**2))
+			ind = np.argmin(chi_array)
+		#likelihood=np.exp(np.multiply(-1./2.,chi_array))/np.sqrt(2*np.pi)
+			likelihood=np.exp(np.multiply(-1./2.,chi_array))/np.sum(np.exp(np.multiply(-1./2.,chi_array))*.05)
+
+			Sig=np.sum(cross/(dcross**2))/np.sum(1./dcross**2)
+			Noise=np.std(np.sum(cross_array/dcross**2,axis=1)/np.sum(1./dcross**2))
+			Sig1=np.sum(cross*(theory/dcross)**2)/np.sum((theory/dcross)**2)
+			Noise1=np.std(np.sum(cross_array*(theory/dcross)**2,axis=1)/np.sum((theory/dcross)**2))
+			SNR=Sig/Noise
+			SNR1=Sig1/Noise1
+			
+			Sig2=np.sum(cross/(dcross**2))/np.sum(1./dcross**2)
+			Noise2=np.sqrt(1./np.sum(1./dcross**2))
+			Sig3=np.sum(cross*(theory/dcross)**2)/np.sum((theory/dcross)**2)
+			Noise3=np.sqrt(np.sum(theory**2)/np.sum(theory**2/dcross**2))
+			SNR2=Sig2/Noise2
+			SNR3=Sig3/Noise3
+			
+			#ipdb.set_trace()
+			fig,ax1=plt.subplots(1,1)
+
+			ax1.plot(a_scales,likelihood,'k.')
+			ax1.set_title('Quiet Faraday Rotation Correlator')
+			ax1.set_xlabel('Likelihood scalar')
+			ax1.set_ylabel('Likelihood of Correlation')
+			fig.savefig('FR_Correlation_Likelihood.png',format='png')
+			fig.savefig('FR_Correlation_Likelihood.eps',format='eps')
+			#ipdb.set_trace()
+			f=open('Maximum_likelihood.txt','w')
+			f.write('Maximum Likelihood: {0:2.5f}%  for scale factor {1:.2f} \n'.format(float(likelihood[ind]*100),float(a_scales[ind])))
+			f.write('Probability of scale factor =1: {0:2.5f}% \n \n'.format(float(likelihood[np.where(a_scales ==1)])*100))
+			f.write('Detection Levels using Standard Deviation \n')
+			f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR,Sig, Noise))
+			f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n \n'.format(SNR1,Sig1,Noise1))
+			f.write('Detection using Theoretical Noise \n')
+			f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR2,Sig2, Noise2))
+			f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR3,Sig3,Noise3))
+			f.close()
+
+		#if b == 1 :
+		#	ipdb.set_trace()
+		#	xbar= np.matrix(ll[1:]*(cross-np.mean(cross))[1:]).T
+		#	vector=np.matrix(ll[1:]*cross[1:]).T
+		#	mu=np.matrix(ll[1:]*theory[1:]).T
+		#	fact=len(xbar)-1
+		#	cov=(np.dot(xbar,xbar.T)/fact).squeeze()
+		#	ipdb.set_trace()
+		#	likelihood=np.exp(-np.dot(np.dot((vector-mu).T,lin.inv(cov)),(vector-mu))/2. )/(np.sqrt(2*np.pi*lin.det(cov)))
+		#	print('Likelihood of fit is #{0:.5f}'.format(likelihood[0,0]))
+		#	f=open('FR_likelihood.txt','w')
+		#	f.write('Likelihood of fit is #{0:.5f}'.format(likelihood[0,0]))
+		#	f.close()
+
 	subprocess.call('mv *01*.png bin_01/', shell=True)
 	subprocess.call('mv *05*.png bin_05/', shell=True)
 	subprocess.call('mv *10*.png bin_10/', shell=True)
 	subprocess.call('mv *20*.png bin_20/', shell=True)
+	subprocess.call('mv *25*.png bin_25/', shell=True)
 	subprocess.call('mv *50*.png bin_50/', shell=True)
 	subprocess.call('mv *.eps eps/', shell=True)
 
@@ -556,9 +609,9 @@ def plot_mc_mll():
 
 def main():
 	##Parameters for Binning, Number of Runs
-	##	Beam correction and, pixel weighting
-	use_beam=1
-	use_weight=0
+	##	Beam correction
+	use_beam=0
+	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)
 	N_runs=100
 	bins=[1,5,10,20,50]
 
@@ -585,11 +638,11 @@ def main():
 	#for n in xrange(N_runs):
 	for i in xrange(N_runs):	
 		print(Fore.WHITE+Back.GREEN+Style.BRIGHT+'Correlation #{:03d}'.format(i+1)+Back.RESET+Fore.RESET+Style.RESET_ALL)
-		ttmp1,ttmp2=faraday_theory_quiet(i_file+'.fits',j_file+'.fits',wl[0],wl[1],alpha_file,names[0]+'x'+names[1],beam=use_beam,weight=use_weight)
+		ttmp1,ttmp2=faraday_theory_quiet(i_file+'.fits',j_file+'.fits',wl[0],wl[1],alpha_file,names[0]+'x'+names[1],beam=use_beam)
 		theory1_array_in.append(ttmp1)
 		theory2_array_in.append(ttmp2)
-		tmp1,tmp2,n1,n2,n3,n4=faraday_correlate_quiet(i_file+'.fits',j_file+'.fits',wl[0],wl[1],alpha_file,names[0]+'x'+names[1],beam=use_beam,weight=use_weight)
-		ntmp1,ntmp2=faraday_noise_quiet(i_file+'.fits',j_file+'.fits',wl[0],wl[1],alpha_file,names[0]+'x'+names[1],beam=use_beam,weight=use_weight)
+		tmp1,tmp2,n1,n2,n3,n4=faraday_correlate_quiet(i_file+'.fits',j_file+'.fits',wl[0],wl[1],alpha_file,names[0]+'x'+names[1],beam=use_beam)
+		ntmp1,ntmp2=faraday_noise_quiet(i_file+'.fits',j_file+'.fits',wl[0],wl[1],alpha_file,names[0]+'x'+names[1],beam=use_beam)
 		cross1_array_in.append(tmp1)
 		cross2_array_in.append(tmp2)
 		Ndq_array_in.append(n1)
@@ -606,8 +659,8 @@ def main():
 	f=open('cl_theory_FR_UxaQ.json','w')
 	json.dump(np.array(theory2_array_in).tolist(),f)
 	f.close()	
-	theory1=np.mean(theory1_array,axis=0)
-	theory2=np.mean(theory2_array,axis=0)
+	theory1=np.mean(theory1_array_in,axis=0)
+	theory2=np.mean(theory2_array_in,axis=0)
 	hp.write_cl('cl_theory_FR_QxaU.fits',theory1)
 	hp.write_cl('cl_theory_FR_UxaQ.fits',theory2)
 	#f=open('cl_theory_FR_QxaU.json','r')
@@ -640,7 +693,7 @@ def main():
 	f=open('cl_noise_FR_UxaQ.json','w')
 	json.dump(np.array(noise2_array_in).tolist(),f)
 	f.close()	
-	bins=[1,5,10,20,50]
+	bins=[1,5,10,20,25,50]
 	fsky=225.*(np.pi/180.)**2/(4*np.pi)
 	l=np.arange(len(cross1_array_in[0]))
 	ll=l*(l+1)/(2*np.pi)
@@ -664,8 +717,8 @@ def main():
         	cross2_array=[]
         	noise1_array=[]
         	noise2_array=[]
-        	
-		Ndq_array=[]
+                    	
+            	Ndq_array=[]
         	Ndu_array=[]
         	Nau_array=[]
         	Naq_array=[]
@@ -673,12 +726,12 @@ def main():
 		plot_l=[]
 		if( b != 1):
 	        	for n in xrange(len(cross1_array_in)):
-	        	        tmp_t1=bin_llcl.bin_llcl(ll*theory1_array_in[n],b)
-	        	        tmp_t2=bin_llcl.bin_llcl(ll*theory2_array_in[n],b)
-				tmp_c1=bin_llcl.bin_llcl(ll*cross1_array_in[n],b)
-	        	        tmp_c2=bin_llcl.bin_llcl(ll*cross2_array_in[n],b)
-				tmp_n1=bin_llcl.bin_llcl(ll*noise1_array_in[n],b)
-	        	        tmp_n2=bin_llcl.bin_llcl(ll*noise2_array_in[n],b)
+	        	        tmp_t1=bin_llcl.bin_llcl(ll*theory1_array_in[n]/bls,b)
+	        	        tmp_t2=bin_llcl.bin_llcl(ll*theory2_array_in[n]/bls,b)
+				tmp_c1=bin_llcl.bin_llcl(ll*cross1_array_in[n]/bls,b)
+	        	        tmp_c2=bin_llcl.bin_llcl(ll*cross2_array_in[n]/bls,b)
+				tmp_n1=bin_llcl.bin_llcl(ll*noise1_array_in[n]/bls,b)
+	        	        tmp_n2=bin_llcl.bin_llcl(ll*noise2_array_in[n]/bls,b)
 	        	        
 				theory1_array.append(tmp_t1['llcl'])
 				theory2_array.append(tmp_t2['llcl'])
@@ -691,52 +744,117 @@ def main():
 	        	        
 				if n == len(cross1_array_in)-1:
 	        	                plot_l=tmp_c1['l_out']
-			tmp_c1=bin_llcl.bin_llcl(ll*cosmic1,b)
-			tmp_d1=bin_llcl.bin_llcl(ll*delta1,b)
+			tmp_c1=bin_llcl.bin_llcl(ll*cosmic1/bls,b)
+			tmp_d1=bin_llcl.bin_llcl(ll*delta1/bls,b)
 		
 			cosmic1=tmp_c1['llcl']
 			delta1=tmp_d1['llcl']
 
-			tmp_c2=bin_llcl.bin_llcl(ll*cosmic2,b)
-			tmp_d2=bin_llcl.bin_llcl(ll*delta2,b)
+			tmp_c2=bin_llcl.bin_llcl(ll*cosmic2/bls,b)
+			tmp_d2=bin_llcl.bin_llcl(ll*delta2/bls,b)
 			cosmic2=tmp_c2['llcl']
 			delta2=tmp_d2['llcl']
 			
 		else:
 			plot_l=l
-			theory1_array=np.multiply(ll,theory1_array_in)
-			cross1_array=np.multiply(ll,cross1_array_in)
-			noise1_array=np.multiply(ll,noise1_array_in)
-			theory2_array=np.multiply(ll,theory2_array_in)
-			cross2_array=np.multiply(ll,cross2_array_in)
-			noise2_array=np.multiply(ll,noise2_array_in)
-			cosmic1*=ll
-			cosmic2*=ll
-			delta1*=ll
-			delta2*=ll
-	
-		theory1=np.mean(theory1_array,axis=0)
-		dtheory1=np.std(theory1_array,axis=0,ddof=1)
-		cross1=np.mean(cross1_array,axis=0)
+			theory1_array=np.multiply(ll/bls,theory1_array_in)
+			cross1_array=np.multiply(ll/bls,cross1_array_in)
+			noise1_array=np.multiply(ll/bls,noise1_array_in)
+			theory2_array=np.multiply(ll/bls,theory2_array_in)
+			cross2_array=np.multiply(ll/bls,cross2_array_in)
+			noise2_array=np.multiply(ll/bls,noise2_array_in)
+			cosmic1*=ll/bls
+			cosmic2*=ll/bls
+			delta1*=ll/bls
+			delta2*=ll/bls
 		noise1=np.mean(noise1_array,axis=0)
-		dcross1=np.std(np.subtract(cross1_array,noise1),axis=0,ddof=1)
-		#ipdb.set_trace()
-		plot_binned.plotBinned((cross1-noise1)*1e12,dcross1*1e12,plot_l,b,'Cross_43x95_FR_QxaU', title='Cross 43x95 FR QxaU',theory=theory1*1e12,dtheory=dtheory1*1e12,delta=delta1*1e12,cosmic=cosmic1*1e12)
-
-		theory2=np.mean(theory2_array,axis=0)
-		dtheory2=np.std(theory2_array,axis=0,ddof=1)
-		cross2=np.mean(cross2_array,axis=0)
-		#delta2=np.mean(delta2_array,axis=0)
 		noise2=np.mean(noise2_array,axis=0)
-		dcross2=np.std(np.subtract(cross2_array,noise2),axis=0,ddof=1)
+        	theory_array = np.add(theory1_array,theory2_array)
+        	theory=np.mean(theory_array,axis=0)
+        	dtheory=np.std(theory_array,axis=0,ddof=1)
+        	cross_array = np.add(np.subtract(cross1_array,noise1),np.subtract(cross2_array,noise2))
+        	cross=np.mean(cross_array,axis=0)
+        	dcross=np.std(cross_array,axis=0,ddof=1)
+        	cosmic=np.sqrt(cosmic1**2+cosmic2**2)
+        	delta=np.sqrt(delta1**2+delta2**2)
+
+		#theory1=np.mean(theory1_array,axis=0)
+		#dtheory1=np.std(theory1_array,axis=0,ddof=1)
+		#cross1=np.mean(cross1_array,axis=0)
+		#dcross1=np.std(np.subtract(cross1_array,noise1),axis=0,ddof=1)
 		#ipdb.set_trace()
-		plot_binned.plotBinned((cross2-noise2)*1e12,dcross2*1e12,plot_l,b,'Cross_43x95_FR_UxaQ', title='Cross 43x95 FR UxaQ',theory=theory2*1e12,dtheory=dtheory2*1e12,delta=delta2*1e12,cosmic=cosmic2*1e12)
+		plot_binned.plotBinned((cross)*1e12,dcross*1e12,plot_l,b,'Cross_43x95_FR_', title='Cross 43x95 FR Correlator',theory=theory*1e12,dtheory=dtheory*1e12,delta=delta*1e12,cosmic=cosmic*1e12)
+
+		#theory2=np.mean(theory2_array,axis=0)
+		#dtheory2=np.std(theory2_array,axis=0,ddof=1)
+		#cross2=np.mean(cross2_array,axis=0)
+		##delta2=np.mean(delta2_array,axis=0)
+		#dcross2=np.std(np.subtract(cross2_array,noise2),axis=0,ddof=1)
+		##ipdb.set_trace()
+		#plot_binned.plotBinned((cross2-noise2)*1e12,dcross2*1e12,plot_l,b,'Cross_43x95_FR_UxaQ', title='Cross 43x95 FR UxaQ',theory=theory2*1e12,dtheory=dtheory2*1e12,delta=delta2*1e12,cosmic=cosmic2*1e12)
 		#ipdb.set_trace()
-	
+    
+		if b == 25 :
+			a_scales=np.linspace(-2,4,121)
+			chi_array=[]
+			for a in a_scales:
+				chi_array.append(np.sum( (cross - a*theory)**2/(dcross)**2))
+			ind = np.argmin(chi_array)
+		#likelihood=np.exp(np.multiply(-1./2.,chi_array))/np.sqrt(2*np.pi)
+			likelihood=np.exp(np.multiply(-1./2.,chi_array))/np.sum(np.exp(np.multiply(-1./2.,chi_array))*.05)
+
+			Sig=np.sum(cross/(dcross**2))/np.sum(1./dcross**2)
+			Noise=np.std(np.sum(cross_array/dcross**2,axis=1)/np.sum(1./dcross**2))
+			Sig1=np.sum(cross*(theory/dcross)**2)/np.sum((theory/dcross)**2)
+			Noise1=np.std(np.sum(cross_array*(theory/dcross)**2,axis=1)/np.sum((theory/dcross)**2))
+			SNR=Sig/Noise
+			SNR1=Sig1/Noise1
+			
+			Sig2=np.sum(cross[1:]/(dcross[1:]**2))/np.sum(1./dcross[1:]**2)
+			Noise2=np.std(np.sum(cross_array[:,1:]*(1/dcross[1:])**2,axis=1)/np.sum(1/dcross[1:]**2))
+			Sig3=np.sum(cross[1:]*(theory[1:]/dcross[1:])**2)/np.sum((theory[1:]/dcross[1:])**2)
+			Noise3=np.std(np.sum(cross_array[:,1:]*(theory[1:]/dcross[1:])**2,axis=1)/np.sum((theory[1:]/dcross[1:])**2))
+			SNR2=Sig2/Noise2
+			SNR3=Sig3/Noise3
+			
+			#ipdb.set_trace()
+			fig,ax1=plt.subplots(1,1)
+
+			ax1.plot(a_scales,likelihood,'k.')
+			ax1.set_title('Quiet Faraday Rotation Correlator')
+			ax1.set_xlabel('Likelihood scalar')
+			ax1.set_ylabel('Likelihood of Correlation')
+			fig.savefig('FR_Correlation_Likelihood.png',format='png')
+			fig.savefig('FR_Correlation_Likelihood.eps',format='eps')
+			#ipdb.set_trace()
+			f=open('Maximum_likelihood.txt','w')
+			f.write('Maximum Likelihood: {0:2.5f}%  for scale factor {1:.2f} \n'.format(float(likelihood[ind]*100),float(a_scales[ind])))
+			f.write('Probability of scale factor =1: {0:2.5f}% \n'.format(float(likelihood[np.where(a_scales ==1)])*100))
+			f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR,Sig, Noise))
+			f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n \n'.format(SNR1,Sig1,Noise1))
+			f.write('Detection without using lowest Multipole \n')
+			f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR2,Sig2, Noise2))
+			f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR3,Sig3,Noise2))
+			f.close()
+
+		#if b == 1 :
+		#	xbar= np.matrix(ll[1:]*(cross-np.mean(cross))[1:]).T
+		#	vector=np.matrix(ll[1:]*cross[1:]).T
+		#	mu=np.matrix(ll[1:]*theory[1:]).T
+		#	fact=len(xbar)-1
+		#	cov=(np.dot(xbar,xbar.T)/fact).squeeze()
+		#	ipdb.set_trace()
+		#	likelihood=np.exp(-np.dot(np.dot((vector-mu).T,lin.inv(cov)),(vector-mu))/2. )/(np.sqrt(2*np.pi*lin.det(cov)))
+		#	print('Likelihood of fit is #{0:.5f}'.format(likelihood[0,0]))
+		#	f=open('FR_likelihood.txt','w')
+		#	f.write('Likelihood of fit is #{0:.5f}'.format(likelihood[0,0]))
+		#	f.close()
+
 	subprocess.call('mv *01*.png bin_01/', shell=True)
 	subprocess.call('mv *05*.png bin_05/', shell=True)
 	subprocess.call('mv *10*.png bin_10/', shell=True)
 	subprocess.call('mv *20*.png bin_20/', shell=True)
+	subprocess.call('mv *25*.png bin_25/', shell=True)
 	subprocess.call('mv *50*.png bin_50/', shell=True)
 	subprocess.call('mv *.eps eps/', shell=True)
 	

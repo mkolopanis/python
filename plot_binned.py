@@ -8,7 +8,7 @@ def plotBinned(cls_in,dcls_in,l_out,bins,output_prefix,title=None,theory=None,dt
 	if not (theory is None) :
 		plt.plot(l_out,theory,'r-')	
 	if not (dtheory is None) :
-		plt.fill_between(l_out,(theory-cosmic),(theory+cosmic),alpha=.5,facecolor='green')
+		plt.fill_between(l_out,(theory-cosmic),(theory+cosmic),alpha=.5,facecolor='red')
 	if not (cosmic is None) :
 		plt.errorbar(l_out,theory,yerr=dtheory,color='red')
 	plt.errorbar(l_out,cls_in,yerr=dcls_in,xerr=bins,color='black',fmt='k.',linestyle='None')
