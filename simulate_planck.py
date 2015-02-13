@@ -15,8 +15,8 @@ def main():
 	##Define Parameters used to simulate Planck Fields
 	bands=np.array([30.,44.,70.,100.,143.,217.,353.])
 	beam_fwhm=np.array([33.,24.,14.,10.,7.1,5.0,5.0])
-	noise_const_temp=np.array([2.0,2.7,4.7,2.5,2.2,4.8,14.7])*2.7255e-6/2.
-	noise_const_pol=np.array([2.8,3.9,6.7,4.0,4.2,9.8,29.8])*2.7255e-6/2.
+	noise_const_temp=np.array([2.0,2.7,4.7,2.5,2.2,4.8,14.7])*2.7255e-6
+	noise_const_pol=np.array([2.8,3.9,6.7,4.0,4.2,9.8,29.8])*2.7255e-6
 	nside=2048
 	npix=hp.nside2npix(nside)
 	pix_area=hp.nside2pixarea(nside)
