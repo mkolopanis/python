@@ -22,18 +22,17 @@ plt.plot(x,y,'k.')
 plt.errorbar(x,y,yerr=yerr)
 plt.errorbar(x,y,yerr=yerr,fmt='.',color='k')
 plt.plot(x,y_true,'r-')
-y
+
 A=np.vstack((np.ones_like(x),x)).T
 C=np.diag(yerr*yerr)
-C
-A
-C
+
+
+
 cov=np.linalg.inv(np.dot(A.T,np.linalg.solve(C,A)))
-cov
 b_ls,m_ls=np.dot(cov,np.dot(A.T,np.linalg.solve(C,y)))
 b_ls,m_ls
 cov
-x
+
 plt.plot(x,m_ls*x+b_ls,'g-')
 def lnlike(theta,x,y,yerr):
     m,b,lnf=theta
@@ -63,15 +62,3 @@ samples=sampler.chain[:,50:,:].reshape((-1,ndim))
 samples
 np.shape(samples)
 fig=triangle.corner(samples,labels=["$m$","$b$","$\ln\,f$"], truths=[m_true,b_true,np.log(f_true)])
-get_ipython().magic(u'whos ')
-get_ipython().magic(u'save ')
-get_ipython().magic(u'save this.py')
-get_ipython().magic(u"save 'this.py'")
-get_ipython().magic(u'save "this.py"')
-get_ipython().magic(u'pinfo save')
-get_ipython().magic(u"save filename='this.py'")
-get_ipython().magic(u'save filename=\'"this.py"')
-get_ipython().magic(u'save filename="this.py"')
-get_ipython().magic(u'save filename=this.py')
-get_ipython().magic(u"save filename='this'")
-get_ipython().magic(u'save session 0-98')
