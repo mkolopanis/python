@@ -1,6 +1,6 @@
 import matplotlib
 matplotlib.use('Agg')
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import healpy as hp
 from astropy.io import fits
@@ -347,7 +347,7 @@ def plot_mc():
 			
 			bins=[1,5,10,20,25,50]
 			gal_cut=[00,05,10,20,30]
-			bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)
+			bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)**2
 			l=np.arange(len(cross1_array_in[0]))
 			ll=l*(l+1)/(2*np.pi)
 			for cut in gal_cut:
@@ -596,7 +596,7 @@ def main():
 	N_runs=100
 	bins=[1,5,10,20,25,50]
 	gal_cut=[00,05,10,20,30]
-	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)
+	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)**2
 	l=np.arange(3*nside_out)
 	ll=l*(l+1)/(2*np.pi)
 

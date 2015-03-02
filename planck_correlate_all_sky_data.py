@@ -111,14 +111,6 @@ def correlate_signal(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,gal_cut
 	DUm=hp.ma(Delta_U)
 	aQm=hp.ma(alpha_q)
 	aUm=hp.ma(alpha_u)
-	sqi=hp.ma(sigma_q_i)
-	sui=hp.ma(sigma_u_i)
-	sqj=hp.ma(sigma_q_j)
-	suj=hp.ma(sigma_u_j)
-	salpha=hp.ma(delta_alpha_radio)
-	alpham=hp.ma(alpha_radio)
-	um=hp.ma(iqu_band_j[2])
-	qm=hp.ma(iqu_band_j[1])
 	#ipdb.set_trace()	
 	Bl_factor=np.repeat(1.,3*nside_out)
 	#ipdb.set_trace()
@@ -142,27 +134,12 @@ def correlate_signal(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,gal_cut
 	DUm.mask=mask_bool
 	aQm.mask=mask_bool
 	aUm.mask=mask_bool
-	sqi.mask=mask_bool
-	sui.mask=mask_bool
-	sqj.mask=mask_bool
-	suj.mask=mask_bool
-	salpha.mask=mask_bool
-	alpham.mask=mask_bool
-	um.mask=mask_bool
-	qm.mask=mask_bool
 	#ipdb.set_trace()
 	cross1=hp.anafast(DQm,map2=aUm)/Bl_factor**2
 	cross2=hp.anafast(DUm,map2=aQm)/Bl_factor**2
 	
 
-	##calculate theoretical variance for correlations
-	N_dq=abs((sqi-sqj)**2).sum()*(pix_area/const)**2/(4.*np.pi)
-	N_du=abs((sui-suj)**2).sum()*(pix_area/const)**2/(4.*np.pi)
-	N_au=abs((salpha*um+alpham*suj+salpha*suj)**2).sum()*pix_area**2/(4.*np.pi)
-	N_aq=abs((salpha*qm+alpham*sqj+salpha*sqj)**2).sum()*pix_area**2/(4.*np.pi)
-	#ipdb.set_trace()
-
-	return (cross1,cross2,N_dq,N_du,N_au,N_aq)
+	return (cross1,cross2)
 
 def correlate_noise(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,gal_cut=0.):
 	print "\t \tNoise Correlation"
@@ -206,7 +183,9 @@ def correlate_noise(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,gal_cut=
 #	sigma_j=[noise_const_pol[ind_j]*np.random.normal(0,1,npix_j),noise_const_pol[ind_j]*np.random.normal(0,1,npix_j)]
 	sigma_i=hp.reorder(sigma_i,n2r=1)
 	sigma_j=hp.reorder(sigma_j,n2r=1)
-
+	
+	tmp_i=np.copy(iqu_band_i)
+	tmp_j=np.copy(iqu_band_j)
 	iqu_band_i[1]=np.copy(sigma_i[0])
 	iqu_band_i[2]=np.copy(sigma_i[1])
 	iqu_band_j[1]=np.copy(sigma_j[0])
@@ -217,9 +196,18 @@ def correlate_noise(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,gal_cut=
 	iqu_band_j=hp.smoothing(iqu_band_j,pol=1,fwhm=np.sqrt((smoothing_scale)**2-(beam_fwhm[ind_j])**2)*np.pi/(180.*60.),verbose=False)
 	#alpha_radio=hp.smoothing(alpha_radio,fwhm=np.pi/180.,lmax=383)
 
-	iqu_band_i=hp.ud_grade(iqu_band_i,nside_out=nside_out,order_in=order_i,order_out='ring')
-	iqu_band_j=hp.ud_grade(iqu_band_j,nside_out=nside_out,order_in=order_j,order_out='ring')
-	
+	iqu_band_i=hp.ud_grade(iqu_band_i,nside_out=nside_out,order_out='ring')
+	iqu_band_j=hp.ud_grade(iqu_band_j,nside_out=nside_out,order_out='ring')
+	tmp_i=hp.reorder(tmp_i,n2r=1)
+	tmp_j=hp.reorder(tmp_j,n2r=1)
+
+	tmp_i=hp.smoothing(tmp_i,pol=1,fwhm=np.sqrt( (smoothing_scale)**2-(beam_fwhm[ind_i])**2)/(np.pi*180.*60))
+	tmp_j=hp.smoothing(tmp_j,pol=1,fwhm=np.sqrt( (smoothing_scale)**2-(beam_fwhm[ind_j])**2)/(np.pi*180.*60))
+
+	tmp_i=hp.ud_grade(tmp_i,128)
+	tmp_j=hp.ud_grade(tmp_j,128)
+
+
 	const=2.*(wl_i**2-wl_j**2)	
 
 	Delta_Q=(iqu_band_i[1]-iqu_band_j[1])/const
@@ -231,6 +219,14 @@ def correlate_noise(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,gal_cut=
 	DUm=hp.ma(Delta_U)
 	aQm=hp.ma(alpha_q)
 	aUm=hp.ma(alpha_u)
+	sqi=hp.ma(iqu_band_i[1])
+	sui=hp.ma(iqu_band_i[2])
+	sqj=hp.ma(iqu_band_j[1])
+	suj=hp.ma(iqu_band_j[2])
+	salpha=hp.ma(delta_alpha_radio)
+	alpham=hp.ma(alpha_radio)
+	um=hp.ma(tmp_j[2])
+	qm=hp.ma(tmp_j[1])
 	
 	Bl_factor=np.repeat(1.,3*nside_out)
 	#ipdb.set_trace()
@@ -254,14 +250,26 @@ def correlate_noise(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False,gal_cut=
 	DUm.mask=mask_bool
 	aQm.mask=mask_bool
 	aUm.mask=mask_bool
+	sqi.mask=mask_bool
+	sui.mask=mask_bool
+	sqj.mask=mask_bool
+	suj.mask=mask_bool
+	salpha.mask=mask_bool
+	alpham.mask=mask_bool
+	um.mask=mask_bool
+	qm.mask=mask_bool
 	#ipdb.set_trace()
 	cross1=hp.anafast(DQm,map2=aUm)/Bl_factor**2
 	cross2=hp.anafast(DUm,map2=aQm)/Bl_factor**2
 	#cross1=np.mean(cross1_array,axis=0)	##Average over all Cross Spectra
 	#cross2=np.mean(cross2_array,axis=0)	##Average over all Cross Spectra
-	#hp.write_cl('cl_'+bands+'_FR_noise_QxaU.fits',cross1)
-	#hp.write_cl('cl_'+bands+'_FR_noise_UxaQ.fits',cross2)
-	return (cross1,cross2)
+	##calculate theoretical variance for correlations
+	N_dq=( (sqi-sqj)**2 ).sum()*(pix_area/const)**2/(4.*np.pi)
+	N_du=( (sui-suj)**2 ).sum()*(pix_area/const)**2/(4.*np.pi)
+	N_au=( (salpha*um+alpham*suj+salpha*suj)**2 ).sum()*pix_area**2/(4.*np.pi)
+	N_aq=( (salpha*qm+alpham*sqj+salpha*sqj)**2 ).sum()*pix_area**2/(4.*np.pi)
+	#ipdb.set_trace()
+	return (cross1,cross2,N_dq,N_du,N_au,N_aq)
 
 def plot_mc():
 	bins=[1,5,10,20,25,50]
@@ -582,22 +590,21 @@ def main():
 				tmp_Nau_array=[]
 				tmp_Naq_array=[]
 				
+				tmp_c1,tmp_c2=correlate_signal(dsets[i],dsets[j],wl[i],wl[j],alpha_file,'{0:0>3.0f}x{1:0>3.0f}'.format(bands[i],bands[j]),beam=use_beam,gal_cut=cut)
+				cross1_array_in.append(tmp_c1)
+				cross2_array_in.append(tmp_c2)
+				
 				for n in xrange(N_runs):
-					print('\t Correlation #{:0>3d}'.format(n+1))
-					tmp_c1,tmp_c2,tmp_dq,tmp_du,tmp_au,tmp_aq=correlate_signal(dsets[i],dsets[j],wl[i],wl[j],alpha_file,'{0:0>3.0f}x{1:0>3.0f}'.format(bands[i],bands[j]),beam=use_beam,gal_cut=cut)
-					tmp_cross1_array.append(tmp_c1)
-					tmp_cross2_array.append(tmp_c2)
+					print('\tNoise Correlation #{:0>3d}'.format(n+1))
+					
+					tmp_n1,tmp_n2,tmp_dq,tmp_du,tmp_au,tmp_aq=correlate_noise(dsets[i],dsets[j],wl[i],wl[j],alpha_file,'{0:0>3.0f}x{1:0>3.0f}'.format(bands[i],bands[j]),beam=use_beam,gal_cut=cut)
+					tmp_noise1_array.append(tmp_n1)
+					tmp_noise2_array.append(tmp_n2)
 					tmp_Ndq_array.append(tmp_dq)
 					tmp_Ndu_array.append(tmp_du)
 					tmp_Naq_array.append(tmp_aq)
 					tmp_Nau_array.append(tmp_au)
-					
-					tmp_n1,tmp_n2=correlate_noise(dsets[i],dsets[j],wl[i],wl[j],alpha_file,'{0:0>3.0f}x{1:0>3.0f}'.format(bands[i],bands[j]),beam=use_beam,gal_cut=cut)
-					tmp_noise1_array.append(tmp_n1)
-					tmp_noise2_array.append(tmp_n2)
 				
-				cross1_array_in.append(np.mean(tmp_cross1_array,axis=0))
-				cross2_array_in.append(np.mean(tmp_cross2_array,axis=0))
 				noise1_array_in.append(np.mean(tmp_noise1_array,axis=0))
 				noise2_array_in.append(np.mean(tmp_noise2_array,axis=0))
 				Ndq_array_in.append(np.mean(tmp_Ndq_array))
