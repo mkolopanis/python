@@ -80,7 +80,7 @@ if __name__=='__main__':
 	
 	
 	cls=hp.read_cl(cl_file)
-	simul_cmb=hp.sphtfunc.synfast(cls,2048,fwhm=5.*np.pi/(180.*60.),new=1,pol=1);
+	simul_cmb=hp.sphtfunc.synfast(cls,2048,fwhm=0,new=1,pol=1);
 	
 	alpha_radio=hp.read_map(radio_file,hdu='maps/phi');
 	alpha_radio=hp.ud_grade(alpha_radio,nside_out=2048,order_in='ring',order_out='ring')
@@ -93,16 +93,17 @@ if __name__=='__main__':
 			npix1=hp.nside2npix(1024)
 		if i==3:
 			npix1=hp.nside2npix(2048)
-		tmp_cmp=hp.sphtfunc.smoothing(simul_cmb,fwhm=beamfwhm[i]*np.pi/(180.*60.))	
-		tmp_cmb=rotate_tqu(tmp_cmb,wl_p[i],alpha_radio);
+		tmp_cmb=rotate_tqu(simul_cmb,wl_p[i],alpha_radio);
+		tmp_cmp=hp.sphtfunc.smoothing(tmp_cmb,fwhm=beamfwhm[i]*np.pi/(180.*60.))	
 		tmp_q=np.random.normal(0,1,npix1)*noise_const_q[i]
 		tmp_u=np.random.normal(0,1,npix1)*noise_const_q[i]
-		tmp_out=hp.ud_grade(tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u]),nside_out=nside,order_in='ring',order_out='ring');
-		tmp_out=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.,lmax=383,pol=1)
+		tmp_out=tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u])
+		tmp_out=hp.sphtfunc.smoothing(tmp_out,fwhm=np.sqrt(60**2-beamfwhm[i]**2)*np.pi/180./60.,pol=1)
+		tmp_out=hp.ud_grade(tmp_out,nside_out=nside)
 		q_array_1[i]=tmp_out[1]
 		u_array_1[i]=tmp_out[2]
-		sigma_q_1[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_q,nside_out=nside,order_in='ring',order_out='ring'),fwhm=np.pi/180.,lmax=383);
-		sigma_u_1[i]=hp.sphtfunc.smoothing(hp.ud_grade(tmp_u,nside_out=nside,order_in='ring',order_out='ring'),fwhm=np.pi/180.,lmax=383);
+		sigma_q_1[i]=hp.ud_grade(hp.sphtfunc.smoothing(tmp_q,fwhm=np.sqrt(60**2-beamfwhm[i]**2)*np.pi/180./60.,lmax=383),nside_out=nside,order_in='ring',order_out='ring');
+		sigma_u_1[i]=hp.ud_grade(hp.sphtfunc.smoothing(tmp_u,fwhm=np.sqrt(60**2-beamfwhm[i]**2)*np.pi/180./60.,lmax=383),nside_out=nside,order_in='ring',order_out='ring');
 		
 	t3=time()
 	print 'This computation took '+"{:.3f}".format((t3-t2)/60.)+' minutes'
@@ -133,9 +134,9 @@ if __name__=='__main__':
 	alpha_radio=hp.ud_grade(alpha_radio,nside_out=512,order_in='ring',order_out='ring');
 	
 	for i in range(num_wl):
-		tmp_cmb=hp.sphtfunc.smoothing(simul_cmb,fwhm=w_fwhm*np.pi/180.)
 		wmap_counts=hp.read_map(wmap_files[i],field=3);
-		tmp_cmb=rotate_tqu(tmp_cmb,wl_w[i],alpha_radio);
+		tmp_cmb=rotate_tqu(simul_cmb,wl_w[i],alpha_radio);
+		tmp_cmb=hp.sphtfunc.smoothing(tmp_cmb,fwhm=w_fwhm[i]*np.pi/180.)
 		tmp_q=np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts)
 		tmp_u=np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts)
 		tmp_out=hp.ud_grade(tmp_cmb+np.array([np.zeros(npix1),tmp_q,tmp_u]),nside_out=nside,order_in='ring',order_out='ring');

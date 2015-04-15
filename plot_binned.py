@@ -8,13 +8,10 @@ def plotBinned(cls_in,dcls_in,l_out,bins,output_prefix,title=None,theory=None,dt
 	if not (theory is None) :
 		plt.plot(l_out,theory,'r-')	
 	if not (dtheory is None) :
-<<<<<<< HEAD
 		plt.fill_between(l_out,(theory-dtheory),(theory+dtheory),alpha=.5,facecolor='red')
-=======
-		plt.fill_between(l_out,(theory-cosmic),(theory+cosmic),alpha=.5,facecolor='red')
->>>>>>> ea7de9599da6a4681eadb1d9b39647ac6b57b974
+		#plt.fill_between(l_out,(theory-dtheory),(theory+dtheory),alpha=.5,facecolor='red')
 	if not (cosmic is None) :
-		plt.errorbar(l_out,theory,yerr=dtheory,color='red')
+		plt.errorbar(l_out,theory,yerr=cosmic,color='red')
 	plt.errorbar(l_out,cls_in,yerr=dcls_in,xerr=bins,color='black',fmt='k.',linestyle='None')
 	if not (delta is None) :
 		plt.fill_between(l_out,cls_in-delta,cls_in+delta,color='gray',alpha=0.5)

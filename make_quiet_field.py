@@ -24,18 +24,56 @@ def main():
 	output_prefix='/home/matt/quiet/quiet_maps/'
 	nside=1024
 	npix=hp.nside2npix(nside)
-	
-	cls=hp.read_cl(cl_file)
-	print 'Generating Map'
-	simul_cmb=hp.sphtfunc.synfast(cls,nside,fwhm=0.,new=1,pol=1);
-	
-	alpha_radio=hp.read_map(radio_file,hdu='maps/phi');
-	alpha_radio=hp.ud_grade(alpha_radio,nside_out=nside,order_in='ring',order_out='ring')
 	bands=[43.1,94.5]
 	q_fwhm=[27.3,11.7]
-	noise_const_q=np.array([36./fwhm for fwhm in q_fwhm])*1e-6
+	pix_area= np.sqrt(hp.nside2pixarea(1024))*60*180./np.pi
+	noise_const_q=np.array([36./pix_area for f in q_fwhm])*1e-6
+#	noise_const_q=np.array([36./fwhm for fwhm in q_fwhm])*1e-6
 	centers=np.array([convertcenter([12,4],-39),convertcenter([5,12],-39),convertcenter([0,48],-48),convertcenter([22,44],-36)])
 	wl=np.array([299792458./(band*1e9) for band in bands])
+	
+	synchrotron_file='/data/Planck/COM_CompMap_SynchrotronPol-commander_0256_R2.00.fits'
+	dust_file='/data/Planck/COM_CompMap_DustPol-commander_1024_R2.00.fits'
+	gamma_dust=6.626e-34/(1.38e-23*21)
+
+	krj_to_kcmb=np.array([1.,1.])
+	sync_factor=krj_to_kcmb*np.array([20.*(.408/x)**2 for x in bands])
+	dust_factor=krj_to_kcmb*np.array([163.e-6*(np.exp(gamma_dust*353e9)-1)/(np.exp(gamma_dust*x*1e9)-1)* (x/353)**2.54 for x in bands])
+
+	print('Preparing Foregrounds')	
+	hdu_sync=fits.open(synchrotron_file)
+	sync_q=hdu_sync[1].data.field(0)
+	sync_u=hdu_sync[1].data.field(1)
+	
+	sync_q=hp.reorder(sync_q,n2r=1)
+	sync_q=hp.smoothing(sync_q,fwhm=40.*np.pi/(180.*60.),verbose=False,invert=True)
+	sync_q=hp.ud_grade(sync_q,nside_out=nside)
+	
+	sync_u=hp.reorder(sync_u,n2r=1)
+	sync_u=hp.smoothing(sync_u,fwhm=40.*np.pi/(180.*60.),verbose=False,invert=True)
+	sync_u=hp.ud_grade(sync_u,nside_out=nside)
+	hdu_sync.close()
+	
+	hdu_dust=fits.open(dust_file)
+	dust_q=hdu_dust[1].data.field(0)
+	dust_u=hdu_dust[1].data.field(1)
+	hdu_dust.close()
+	
+	dust_q=hp.reorder(dust_q,n2r=1)
+	dust_q=hp.smoothing(dust_q,fwhm=10.0*np.pi/(180.*60.),verbose=False,invert=True)
+	dust_q=hp.ud_grade(dust_q,nside)
+	
+	dust_u=hp.reorder(dust_u,n2r=1)
+	dust_u=hp.smoothing(dust_u,fwhm=10.0*np.pi/(180.*60.),verbose=False,invert=True)
+	dust_u=hp.ud_grade(dust_u,nside)
+	
+	print 'Generating Map'
+	cls=hp.read_cl(cl_file)
+	simul_cmb=hp.sphtfunc.synfast(cls,nside,fwhm=0.,new=1,pol=1);
+	alpha_radio=hp.read_map(radio_file,hdu='maps/phi');
+	alpha_radio=hp.ud_grade(alpha_radio,nside_out=nside,order_in='ring',order_out='ring')
+	
+
 	num_wl=len(wl)
 	t_array=np.zeros((num_wl,npix))	
 	q_array=np.zeros((num_wl,npix))
@@ -43,10 +81,13 @@ def main():
 	u_array=np.zeros((num_wl,npix))
 	sigma_u=np.zeros((num_wl,npix))
 	for i in range(num_wl):
+		print('\tFrequency: {0:2.1f}'.format(bands[i]))
 		tmp_cmb=rotate_tqu(simul_cmb,wl[i],alpha_radio);
 		sigma_q[i]=np.random.normal(0,1,npix)*noise_const_q[i]
 		sigma_u[i]=np.random.normal(0,1,npix)*noise_const_q[i]
-		tmp_out=hp.sphtfunc.smoothing(tmp_cmb,fwhm=q_fwhm[i]*np.pi/(180.*60.),pol=1)
+		tmp_cmb[1]+= np.copy( dust_factor[i]*dust_q+sync_factor[i]*sync_q    )
+		tmp_cmb[2]+= np.copy( dust_factor[i]*dust_u+sync_factor[i]*sync_u    )
+		tmp_out=hp.sphtfunc.smoothing(tmp_cmb,fwhm=np.sqrt((q_fwhm[i]*np.pi/(180.*60.))**2 - hp.nside2pixarea(1024)),pol=1,verbose=False)
 		t_array[i],q_array[i],u_array[i]=tmp_out
 		#sigma_q[i]=hp.sphtfunc.smoothing(tmp_q,fwhm=np.pi/180.)
 		#sigma_u[i]=hp.sphtfunc.smoothing(tmp_u,fwhm=np.pi/180.)

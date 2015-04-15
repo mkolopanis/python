@@ -53,8 +53,7 @@ if __name__=="__main__":
 	nside=128
 	npix=hp.nside2npix(nside)
 	cls=hp.read_cl(cl_file)
-	simul_cmb=hp.sphtfunc.synfast(cls,512,fwhm=13.*np.pi/(180.*60.),new=1,pol=1);
-	simul_cmb=hp.reorder(simul_cmb,r2n=1);
+	simul_cmb=hp.sphtfunc.synfast(cls,512,fwhm=0,new=1,pol=1);
 	
 	alpha_radio=hp.read_map(radio_file,hdu='maps/phi');
 	alpha_radio=hp.ud_grade(alpha_radio,nside_out=512,order_in='ring',order_out='nested')
@@ -64,7 +63,7 @@ if __name__=="__main__":
 	wl=np.array([299792458./(band*1e9) for band in bands])
 	num_wl=len(wl)
 	npix1=hp.nside2npix(512)
-	
+	fwhm_w=np.sqrray([.93,.68,.53,.35,.23])
 	map_prefix='/data/wmap/wmap_band_forered_iqumap_r9_9yr_'
 	simul_prefix='/data/mwap/simul_fr_rotated_'
 	
@@ -80,13 +79,17 @@ if __name__=="__main__":
 	sigma_u=np.zeros((num_wl,npix))
 	for i in range(num_wl):
 		wmap_counts=hp.read_map(wmap_files[i],nest=1,field=3);
+		wmap_count=hp.reorder(wmap_counts,n2r=1)
 		tmp_cmb=rotate_tqu(simul_cmb,wl[i],alpha_radio);
-		tmp_out=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='nested')
-		sigma_q[i]=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.)
-		tmp_out=hp.ud_grade(np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts),nside_out=nside,order_in='nested')
-		sigma_u[i]=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.)
-		tmp_out=hp.ud_grade(tmp_cmb,nside_out=nside,order_in='nested')
-		tmp_out=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.,lmax=383,pol=1)
+		tmp_cmb= hp.smoothing(tmp_cmb,fwhm=fwhm_w[i]*np.pi/180.,pol=1
+		tmp_out=np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts)
+		tmp_out	=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.)
+		sigma_q[i] =hp.ud_grade(tmp_out,nside_out=nside)
+		tmp_out=np.random.normal(0,1,npix1)*noise_const_q[i]/np.sqrt(wmap_counts)
+		tmp_out	=hp.sphtfunc.smoothing(tmp_out,fwhm=np.pi/180.)
+		sigma_u[i] =hp.ud_grade(tmp_out,nside_out=nside)
+		tmp_out=hp.sphtfunc.smoothing(tmp_out,fwhm=np.sqrt(1.-fwhm[w]**2)*np.pi/180.,pol=1)
+		tmp_out=hp.ud_grade(tmp_cmb,nside_out=nside)
 		q_array[i]=tmp_out[1]+sigma_q[i]
 		u_array[i]=tmp_out[2]+sigma_u[i]
 	#emcee code will go here
