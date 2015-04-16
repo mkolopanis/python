@@ -72,10 +72,16 @@ def likelihood(cross,dcross,theory,mask_name,title):
 		ax1.set_xlim([-5000,5000])
 	elif np.max(abs(np.array([s2hi,s2lo]))) > 500:
 		ax1.set_xlim([-1000,1000])
-	elif np.max(abs(np.array([s2hi,s2lo]))) > 100:
+	elif np.max(abs(np.array([s2hi,s2lo]))) > 200:
 		ax1.set_xlim([-500,500])
-	else:
+	elif np.max(abs(np.array([s2hi,s2lo]))) > 100:
+		ax1.set_xlim([-200,200])
+	elif np.max(abs(np.array([s2hi,s2lo]))) > 50:
 		ax1.set_xlim([-100,100])
+	elif np.max(abs(np.array([s2hi,s2lo]))) > 10:
+		ax1.set_xlim([-50,50])
+	else:
+		ax1.set_xlim([-10,10])
 		
 	fig.savefig('FR_correlation_likelihood_'+mask_name+'_'+title+'.png',format='png')
 	fig.savefig('FR_correlation_likelihood_'+mask_name+'_'+title+'.eps',format='eps')
@@ -587,13 +593,13 @@ def plot_mc():
 		        		        
 						if n == len(cross1_array_in[0])-1:
 		        		                plot_l=tmp_c1['l_out']
-					tmp_c1=bin_llcl.bin_llcl(ll*cosmic1_in[m]/bls,b)
-					tmp_d1=bin_llcl.bin_llcl(ll*delta1_in[m]/bls,b)
+					tmp_c1=bin_llcl.bin_llcl(ll*cosmic1_in[m]/bls,b,uniform=1)
+					tmp_d1=bin_llcl.bin_llcl(ll*delta1_in[m]/bls,b,uniform=1)
 					cosmic1[m]=tmp_c1['llcl']
 					delta1[m]=tmp_d1['llcl']
 
-					tmp_c2=bin_llcl.bin_llcl(ll*cosmic2_in[m]/bls,b)
-					tmp_d2=bin_llcl.bin_llcl(ll*delta2_in[m]/bls,b)
+					tmp_c2=bin_llcl.bin_llcl(ll*cosmic2_in[m]/bls,b,uniform=1)
+					tmp_d2=bin_llcl.bin_llcl(ll*delta2_in[m]/bls,b,uniform=1)
 					cosmic2[m]=tmp_c2['llcl']
 					delta2[m]=tmp_d2['llcl']
 					
@@ -746,7 +752,7 @@ def main():
 	##Parameters for Binning, Number of Runs
 	##	Beam correction
 	use_beam=0
-	N_runs=100
+	N_runs=2
 	bins=[1,5,10,20,25,50]
 	gal_cut=[00,05,10,20,30]
 	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)**2

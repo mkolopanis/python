@@ -17,6 +17,7 @@ from scipy import linalg as lin
 ##Global smoothing size parameter##
 
 smoothing_scale=40.0
+nside_out=128
 ###map_bl=hp.gauss_beam(np.sqrt(hp.nside2pixarea(128)+hp.nside2pixarea(1024)),383)
 
 pix_area= np.sqrt(hp.nside2pixarea(1024))*60*180./np.pi
@@ -26,6 +27,74 @@ mask_array=[ '/data/wmap/wmap_polarization_analysis_mask_r9_9yr_v5.fits','/data/
 mask_name=['wmap','cmask']
 synchrotron_file='/data/Planck/COM_CompMap_SynchrotronPol-commander_0256_R2.00.fits'
 dust_file='/data/Planck/COM_CompMap_DustPol-commander_1024_R2.00.fits'
+
+def likelihood(cross,dcross,theory,mask_name,title):
+	a_scales=np.linspace(-5000,5000,50000)
+	chi_array=[]
+	for a in a_scales:
+		chi_array.append(np.exp(-.5*np.sum( (cross - a*theory)**2/(dcross)**2)))
+	chi_array /= np.max(chi_array)
+	chi_sum = np.cumsum(chi_array)
+	chi_sum /= chi_sum[-1]
+	
+	mean = a_scales[np.argmax(chi_array)]
+	
+	s1lo,s1hi = a_scales[chi_sum<0.1586][-1],a_scales[chi_sum>1-0.1586][0]
+	s2lo,s2hi = a_scales[chi_sum<0.0227][-1],a_scales[chi_sum>1-0.0227][0]
+
+	fig,ax1=plt.subplots(1,1)
+
+	ax1.plot(a_scales,chi_array,'k',linewidth=2)
+	ax1.vlines(s1lo,0,1,linewidth=2,color='blue')
+	ax1.vlines(s1hi,0,1,linewidth=2,color='blue')
+	ax1.vlines(s2lo,0,1,linewidth=2,color='orange')
+	ax1.vlines(s2hi,0,1,linewidth=2,color='orange')
+	ax1.set_title('Faraday Rotatior Posterior')
+	ax1.set_xlabel('Likelihood scalar')
+	ax1.set_ylabel('Likelihood of Correlation')
+	if np.max(abs(np.array([s2hi,s2lo]))) > 1000:
+		ax1.set_xlim([-5000,5000])
+	elif np.max(abs(np.array([s2hi,s2lo]))) > 500:
+		ax1.set_xlim([-1000,1000])
+	elif np.max(abs(np.array([s2hi,s2lo]))) > 200:
+		ax1.set_xlim([-500,500])
+	elif np.max(abs(np.array([s2hi,s2lo]))) > 100:
+		ax1.set_xlim([-200,200])
+	elif np.max(abs(np.array([s2hi,s2lo]))) > 50:
+		ax1.set_xlim([-100,100])
+	elif np.max(abs(np.array([s2hi,s2lo]))) > 10:
+		ax1.set_xlim([-50,50])
+	else:
+		ax1.set_xlim([-10,10])
+		
+	fig.savefig('FR_correlation_likelihood_'+mask_name+'_'+title+'.png',format='png')
+	fig.savefig('FR_correlation_likelihood_'+mask_name+'_'+title+'.eps',format='eps')
+
+
+	Sig=np.sum(cross/(dcross**2))/np.sum(1./dcross**2)
+	#Noise=np.std(np.sum(cross_array/dcross**2,axis=1)/np.sum(1./dcross**2))	\
+	Noise=np.sqrt(1./np.sum(1./dcross**2))
+	Sig1=np.sum(cross*(theory/dcross)**2)/np.sum((theory/dcross)**2)
+	Noise1=np.sqrt(np.sum(dcross**2*(theory/dcross)**2)/np.sum((theory/dcross)**2))
+	SNR=Sig/Noise
+	SNR1=Sig1/Noise1
+	
+	#ipdb.set_trace()
+	#ipdb.set_trace()
+	f=open('Maximum_likelihood_'+mask_name+'_'+title+'.txt','w')
+	f.write('Maximum Likelihood: {0:2.5f}%  for scale factor {1:.2f} \n'.format(float(chi_array[np.argmax(chi_array)]*100),mean))
+	#f.write('Probability of scale factor =1: {0:2.5f}% \n'.format(float(chi_array[np.where(a_scales ==1)])*100))
+	f.write('Posterior: Mean,\t(1siglo,1sighi),\t(2sighlo,2sighi)\n')
+	f.write('Posterior: {0:.3f}\t({1:.3f},{2:.3f})\t({3:.3f},{4:.3f}) '.format(mean, s1lo,s1hi, s2lo,s2hi))
+	f.write('\n\n')
+	f.write('Detection Levels using Standard Deviation \n')
+	f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR,Sig, Noise))
+	f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n \n'.format(SNR1,Sig1,Noise1))
+	#f.write('Detection using Theoretical Noise \n')
+	#f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR2,Sig2, Noise2))
+	#f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR3,Sig3,Noise3))
+	f.close()
+
 def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False):
 	print "Computing Cross Correlations for Bands "+str(bands)
 
@@ -456,7 +525,8 @@ def plot_mc():
 	f.close()	
 	
 	bins=[1,5,10,20,25,50]
-	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)**2
+#	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)**2
+	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)**2
 	fsky=225.*(np.pi/180.)**2/(4*np.pi)
 	l=np.arange(len(cross1_array_in[0]))
 	ll=l*(l+1)/(2*np.pi)
@@ -573,52 +643,8 @@ def plot_mc():
 		#ipdb.set_trace()
     
 		if b == 25 :
-			a_scales=np.linspace(-2,4,121)
-			chi_array=[]
-			ind_a=np.where(a_scales==1)[0][0]
-			for a in a_scales:
-				chi_array.append(np.sum( (cross - a*theory_cls)**2/(dcross)**2))
-			ind = np.argmin(chi_array)
-		#likelihood=np.exp(np.multiply(-1./2.,chi_array))/np.sqrt(2*np.pi)
-			likelihood=np.exp(np.multiply(-1./2.,chi_array))/np.sum(np.exp(np.multiply(-1./2.,chi_array))*.05)
-			#ipdb.set_trace()
-
-			Sig=np.sum(cross/(dcross**2))/np.sum(1./dcross**2)
-			Noise=np.std(np.sum(cross_array/dcross**2,axis=1)/np.sum(1./dcross**2))
-			Sig1=np.sum(cross*(theory/dcross)**2)/np.sum((theory/dcross)**2)
-			Noise1=np.std(np.sum(cross_array*(theory/dcross)**2,axis=1)/np.sum((theory/dcross)**2))
-			SNR=Sig/Noise
-			SNR1=Sig1/Noise1
-			
-			Sig2=np.sum(cross/(dcross**2))/np.sum(1./dcross**2)
-			Noise2=np.sqrt(1./np.sum(1./dcross**2))
-			Sig3=np.sum(cross*(theory_cls/dcross)**2)/np.sum((theory_cls/dcross)**2)
-			Noise3=np.sqrt(np.sum(theory_cls**2)/np.sum(theory_cls**2/dcross**2))
-			SNR2=Sig2/Noise2
-			SNR3=Sig3/Noise3
-			
-			#ipdb.set_trace()
-			fig,ax1=plt.subplots(1,1)
-
-			ax1.plot(a_scales,likelihood,'k.')
-			ax1.set_title('Quiet Faraday Rotation Correlator')
-			ax1.set_xlabel('Likelihood scalar')
-			ax1.set_ylabel('Likelihood of Correlation')
-			fig.savefig('FR_Correlation_Likelihood.png',format='png')
-			fig.savefig('FR_Correlation_Likelihood.eps',format='eps')
-			#ipdb.set_trace()
-			f=open('Maximum_likelihood.txt','w')
-			f.write('Maximum Likelihood: {0:2.5f}%  for scale factor {1:.2f} \n'.format(float(likelihood[ind]*100),float(a_scales[ind])))
-			f.write('Probability of scale factor =1: {0:2.5f}% \n'.format(float(likelihood[np.where(a_scales ==1)])*100))
-			f.write('Chi-squared: {0:2.3e} \n'.format(chi_array[ind_a]))
-			f.write('Chi-squared/dof: {0:2.3e} \n'.format(chi_array[ind_a]/len(theory_cls)))
-			f.write('Detection Levels using Standard Deviation \n')
-			f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR,Sig, Noise))
-			f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n \n'.format(SNR1,Sig1,Noise1))
-			f.write('Detection using Theoretical Noise \n')
-			f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR2,Sig2, Noise2))
-			f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR3,Sig3,Noise3))
-			f.close()
+			likelihood(cross,dcross,theory,'field1','c2bfr')
+		
 
 		#if b == 1 :
 		#	ipdb.set_trace()
@@ -720,8 +746,9 @@ def main():
 	##Parameters for Binning, Number of Runs
 	##	Beam correction
 	use_beam=0
-	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)**2
-	N_runs=100
+#	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)**2
+	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)**2
+	N_runs=2
 	bins=[1,5,10,20,50]
 
 	map_prefix='/home/matt/quiet/quiet_maps/'
@@ -904,7 +931,7 @@ def main():
 		#cross1=np.mean(cross1_array,axis=0)
 		#dcross1=np.std(np.subtract(cross1_array,noise1),axis=0,ddof=1)
 		#ipdb.set_trace()
-		plot_binned.plotBinned((cross)*1e12,dcross*1e12,plot_l,b,'Cross_43x95_FR_', title='Cross 43x95 FR Correlator',theory=theory*1e12,dtheory=dtheory*1e12,delta=delta*1e12,cosmic=cosmic*1e12)
+		plot_binned.plotBinned((cross)*1e12,dcross*1e12,plot_l,b,'Cross_43x95_FR_', title='QUIET FR Correlator',theory=theory*1e12,dtheory=dtheory*1e12,delta=delta*1e12,cosmic=cosmic*1e12)
 
 		#theory2=np.mean(theory2_array,axis=0)
 		#dtheory2=np.std(theory2_array,axis=0,ddof=1)
@@ -916,47 +943,7 @@ def main():
 		#ipdb.set_trace()
     
 		if b == 25 :
-			a_scales=np.linspace(-2,4,121)
-			chi_array=[]
-			for a in a_scales:
-				chi_array.append(np.sum( (cross - a*theory)**2/(dcross)**2))
-			ind = np.argmin(chi_array)
-		#likelihood=np.exp(np.multiply(-1./2.,chi_array))/np.sqrt(2*np.pi)
-			likelihood=np.exp(np.multiply(-1./2.,chi_array))/np.sum(np.exp(np.multiply(-1./2.,chi_array))*.05)
-
-			Sig=np.sum(cross/(dcross**2))/np.sum(1./dcross**2)
-			Noise=np.std(np.sum(cross_array/dcross**2,axis=1)/np.sum(1./dcross**2))
-			Sig1=np.sum(cross*(theory/dcross)**2)/np.sum((theory/dcross)**2)
-			Noise1=np.std(np.sum(cross_array*(theory/dcross)**2,axis=1)/np.sum((theory/dcross)**2))
-			SNR=Sig/Noise
-			SNR1=Sig1/Noise1
-			
-			Sig2=np.sum(cross[1:]/(dcross[1:]**2))/np.sum(1./dcross[1:]**2)
-			Noise2=np.std(np.sum(cross_array[:,1:]*(1/dcross[1:])**2,axis=1)/np.sum(1/dcross[1:]**2))
-			Sig3=np.sum(cross[1:]*(theory[1:]/dcross[1:])**2)/np.sum((theory[1:]/dcross[1:])**2)
-			Noise3=np.std(np.sum(cross_array[:,1:]*(theory[1:]/dcross[1:])**2,axis=1)/np.sum((theory[1:]/dcross[1:])**2))
-			SNR2=Sig2/Noise2
-			SNR3=Sig3/Noise3
-			
-			#ipdb.set_trace()
-			fig,ax1=plt.subplots(1,1)
-
-			ax1.plot(a_scales,likelihood,'k.')
-			ax1.set_title('Quiet Faraday Rotation Correlator')
-			ax1.set_xlabel('Likelihood scalar')
-			ax1.set_ylabel('Likelihood of Correlation')
-			fig.savefig('FR_Correlation_Likelihood.png',format='png')
-			fig.savefig('FR_Correlation_Likelihood.eps',format='eps')
-			#ipdb.set_trace()
-			f=open('Maximum_likelihood.txt','w')
-			f.write('Maximum Likelihood: {0:2.5f}%  for scale factor {1:.2f} \n'.format(float(likelihood[ind]*100),float(a_scales[ind])))
-			f.write('Probability of scale factor =1: {0:2.5f}% \n'.format(float(likelihood[np.where(a_scales ==1)])*100))
-			f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR,Sig, Noise))
-			f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n \n'.format(SNR1,Sig1,Noise1))
-			f.write('Detection without using lowest Multipole \n')
-			f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR2,Sig2, Noise2))
-			f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR3,Sig3,Noise2))
-			f.close()
+			likelihood(cross,dcross,theory,'field1','c2bfr')
 
 		#if b == 1 :
 		#	xbar= np.matrix(ll[1:]*(cross-np.mean(cross))[1:]).T
