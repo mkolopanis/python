@@ -57,31 +57,45 @@ def main():
 	
 	alpha_radio=hp.read_map(radio_file,hdu='maps/phi');
 	alpha_radio=hp.ud_grade(alpha_radio,nside_out=nside,order_in='ring',order_out='ring')
-
+	bl_40=hp.gauss_beam(40.*np.pi/(180.*60.),3*nside-1)
 	hdu_sync=fits.open(synchrotron_file)
 	sync_q=hdu_sync[1].data.field(0)
 	sync_u=hdu_sync[1].data.field(1)
 	
 	sync_q=hp.reorder(sync_q,n2r=1)
-	sync_q=hp.smoothing(sync_q,fwhm=40.*np.pi/(180.*60.),verbose=False,invert=True)
+	tmp_alm=hp.map2alm(sync_q)
+	tmp_alm=hp.almxfl(tmp_alm,1./bl_40)
+	sync_q=hp.alm2map(tmp_alm,nside)
+	#sync_q=hp.smoothing(sync_q,fwhm=40.*np.pi/(180.*60.),verbose=False,invert=True)
 	sync_q=hp.ud_grade(sync_q,nside_out=nside)
 	
 	sync_u=hp.reorder(sync_u,n2r=1)
-	sync_u=hp.smoothing(sync_u,fwhm=40.*np.pi/(180.*60.),verbose=False,invert=True)
+	tmp_alm=hp.map2alm(sync_u)
+	tmp_alm=hp.almxfl(tmp_alm,1./bl_40)
+	sync_u=hp.alm2map(tmp_alm,nside)
+	#sync_u=hp.smoothing(sync_u,fwhm=40.*np.pi/(180.*60.),verbose=False,invert=True)
 	sync_u=hp.ud_grade(sync_u,nside_out=nside)
 	hdu_sync.close()
 	
+
+	bl_10=hp.gauss_beam(10*np.pi/(180.*60.),3*nside-1)
 	hdu_dust=fits.open(dust_file)
 	dust_q=hdu_dust[1].data.field(0)
 	dust_u=hdu_dust[1].data.field(1)
 	hdu_dust.close()
 	
 	dust_q=hp.reorder(dust_q,n2r=1)
-	dust_q=hp.smoothing(dust_q,fwhm=10.0*np.pi/(180.*60.),verbose=False,invert=True)
+	tmp_alm=hp.map2alm(dust_q)
+	tmp_alm=hp.almxfl(tmp_alm,1./bl_10)
+	dust_q=hp.alm2map(tmp_alm,nside)
+	#dust_q=hp.smoothing(dust_q,fwhm=10.0*np.pi/(180.*60.),verbose=False,invert=True)
 	dust_q=hp.ud_grade(dust_q,nside)
 	
 	dust_u=hp.reorder(dust_u,n2r=1)
-	dust_u=hp.smoothing(dust_u,fwhm=10.0*np.pi/(180.*60.),verbose=False,invert=True)
+	tmp_alm=hp.map2alm(dust_u)
+	tmp_alm=hp.almxfl(tmp_alm,1./bl_10)
+	dust_u=hp.alm2map(tmp_alm,nside)
+	#dust_q=hp.smoothing(dust_q,fwhm=10.0*np.pi/(180.*60.),verbose=False,invert=True)
 	dust_u=hp.ud_grade(dust_u,nside)
 
 	nside=2048
@@ -112,7 +126,7 @@ def main():
 		tmp_tqu[2]+= np.copy( dust_factor[i]*dust_u+sync_factor[i]*sync_u    )
 	#	tmp_tqu[1]+= np.copy(sync_factor[i]*sync_q)
 	#	tmp_tqu[2]+= np.copy(sync_factor[i]*sync_u)
-		tmp_tqu=hp.sphtfunc.smoothing(tmp_tqu,fwhm=np.sqrt((beam_fwhm[i]*np.pi/(180.*60.))**2 - pix_area),pol=1)
+		tmp_tqu=hp.sphtfunc.smoothing(tmp_tqu,fwhm=beam_fwhm[i]*np.pi/(180.*60.),pol=1)
 	
 		#Add Noise After smooothing
 		#tmp_tqu+=tmp_didqdu 

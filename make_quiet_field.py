@@ -40,32 +40,32 @@ def main():
 	sync_factor=krj_to_kcmb*np.array([20.*(.408/x)**2 for x in bands])
 	dust_factor=krj_to_kcmb*np.array([163.e-6*(np.exp(gamma_dust*353e9)-1)/(np.exp(gamma_dust*x*1e9)-1)* (x/353)**2.54 for x in bands])
 
-	print('Preparing Foregrounds')	
-	hdu_sync=fits.open(synchrotron_file)
-	sync_q=hdu_sync[1].data.field(0)
-	sync_u=hdu_sync[1].data.field(1)
-	
-	sync_q=hp.reorder(sync_q,n2r=1)
-	sync_q=hp.smoothing(sync_q,fwhm=40.*np.pi/(180.*60.),verbose=False,invert=True)
-	sync_q=hp.ud_grade(sync_q,nside_out=nside)
-	
-	sync_u=hp.reorder(sync_u,n2r=1)
-	sync_u=hp.smoothing(sync_u,fwhm=40.*np.pi/(180.*60.),verbose=False,invert=True)
-	sync_u=hp.ud_grade(sync_u,nside_out=nside)
-	hdu_sync.close()
-	
-	hdu_dust=fits.open(dust_file)
-	dust_q=hdu_dust[1].data.field(0)
-	dust_u=hdu_dust[1].data.field(1)
-	hdu_dust.close()
-	
-	dust_q=hp.reorder(dust_q,n2r=1)
-	dust_q=hp.smoothing(dust_q,fwhm=10.0*np.pi/(180.*60.),verbose=False,invert=True)
-	dust_q=hp.ud_grade(dust_q,nside)
-	
-	dust_u=hp.reorder(dust_u,n2r=1)
-	dust_u=hp.smoothing(dust_u,fwhm=10.0*np.pi/(180.*60.),verbose=False,invert=True)
-	dust_u=hp.ud_grade(dust_u,nside)
+	#print('Preparing Foregrounds')	
+	#hdu_sync=fits.open(synchrotron_file)
+	#sync_q=hdu_sync[1].data.field(0)
+	#sync_u=hdu_sync[1].data.field(1)
+	#
+	#sync_q=hp.reorder(sync_q,n2r=1)
+	#sync_q=hp.smoothing(sync_q,fwhm=40.*np.pi/(180.*60.),verbose=False,invert=True)
+	#sync_q=hp.ud_grade(sync_q,nside_out=nside)
+	#
+	#sync_u=hp.reorder(sync_u,n2r=1)
+	#sync_u=hp.smoothing(sync_u,fwhm=40.*np.pi/(180.*60.),verbose=False,invert=True)
+	#sync_u=hp.ud_grade(sync_u,nside_out=nside)
+	#hdu_sync.close()
+	#
+	#hdu_dust=fits.open(dust_file)
+	#dust_q=hdu_dust[1].data.field(0)
+	#dust_u=hdu_dust[1].data.field(1)
+	#hdu_dust.close()
+	#
+	#dust_q=hp.reorder(dust_q,n2r=1)
+	#dust_q=hp.smoothing(dust_q,fwhm=10.0*np.pi/(180.*60.),verbose=False,invert=True)
+	#dust_q=hp.ud_grade(dust_q,nside)
+	#
+	#dust_u=hp.reorder(dust_u,n2r=1)
+	#dust_u=hp.smoothing(dust_u,fwhm=10.0*np.pi/(180.*60.),verbose=False,invert=True)
+	#dust_u=hp.ud_grade(dust_u,nside)
 	
 	print 'Generating Map'
 	cls=hp.read_cl(cl_file)
@@ -85,8 +85,8 @@ def main():
 		tmp_cmb=rotate_tqu(simul_cmb,wl[i],alpha_radio);
 		sigma_q[i]=np.random.normal(0,1,npix)*noise_const_q[i]
 		sigma_u[i]=np.random.normal(0,1,npix)*noise_const_q[i]
-		tmp_cmb[1]+= np.copy( dust_factor[i]*dust_q+sync_factor[i]*sync_q    )
-		tmp_cmb[2]+= np.copy( dust_factor[i]*dust_u+sync_factor[i]*sync_u    )
+		#tmp_cmb[1]+= np.copy( dust_factor[i]*dust_q+sync_factor[i]*sync_q    )
+		#tmp_cmb[2]+= np.copy( dust_factor[i]*dust_u+sync_factor[i]*sync_u    )
 		tmp_out=hp.sphtfunc.smoothing(tmp_cmb,fwhm=np.sqrt((q_fwhm[i]*np.pi/(180.*60.))**2 - hp.nside2pixarea(1024)),pol=1,verbose=False)
 		t_array[i],q_array[i],u_array[i]=tmp_out
 		#sigma_q[i]=hp.sphtfunc.smoothing(tmp_q,fwhm=np.pi/180.)
