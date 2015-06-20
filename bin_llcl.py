@@ -1,5 +1,4 @@
 import numpy as np
-import ipdb 
 def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 	if np.min(ubin) < 0:
 		print 'bins must be positive'
@@ -9,10 +8,6 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 		nb=1
 	else:
 		nb=len(bins)
-	if len(llcl_in) <= 6:
-		lmax_in=len(llcl_in[0])-1
-	else:
-		lmax_in=len(llcl_in)-1
 	if (nb > 1):
 		k=np.where(bins <= (lmax_in +1))[0]
 		if ( len(k) >= (nb-1)):
@@ -23,32 +18,37 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 			nb =len(k) +1
 			print 'BIN_LLCL: too many bins'
 			print '{} bins avaiable {} bins given'.format(len(k),nb)
+
+	if len(np.shape(llcl_in)) == 1: llcl_in = [ llcl_in ]
+	nspec=np.shape(llcl_in)[0]
+	lmax_in=len(llcl_in[0])-1
+	llcl_in = np.swapaxes(llcl_in,0,1).tolist()
 	if nb == 1: ##regular binning
-		nbins=(lmax_in-bins/2)/long(bins)
-		lmax=nbins*bins+bins/2
-		l=np.arange(lmax)
+		nbins=(lmax_in)/long(bins)
+		lmax=nbins*bins - 1
+		l=np.arange(lmax+1)
 		w=2*l+1
 		if uniform:
-			w=np.repeat(1,lmax)
-		y=llcl_in[:lmax]
+			w=np.repeat(1,lmax+1)
+		y=np.array(llcl_in[:lmax+1]).T
 		if flatten:
 			y*=(l*(l+1)/(2*np.pi))
-		w1=np.reshape(w[bins/2:],(nbins,bins))
-		y1=np.reshape(y[bins/2:]*w[bins/2:],(nbins,bins))
-		l1=np.reshape(l[bins/2:],(nbins,bins))
+		w1=np.reshape(w,(nbins,bins))
+		y1=np.reshape(y*w,(nspec,nbins,bins))
+		l1=np.reshape(l,(nbins,bins))
 		n1=np.tile(1,(nbins,bins))
-		y2=np.reshape(y[bins/2:],(nbins,bins))
+		y2=np.reshape(y,(nspec,nbins,bins))
 		
-		llcl_out=(np.sum(y1,1)/np.sum(w1,1)).tolist()
-		llcl_out.insert(0,np.sum(y[:bins/2]*w[:bins/2])/np.sum(w[:bins/2]))	
-		std_llcl=(np.std(y2,1)).tolist()
-		std_llcl.insert(0,np.std(y[:bins/2]))
-		l_out = (np.sum(l1,1)/np.sum(n1,1)).tolist()
-		l_out.insert(0,np.mean(l[:bins/2]))
-		llcl_out=np.array(llcl_out)
-		l_out=np.array(l_out)
-		std_llcl=np.array(std_llcl)
-		dl=np.repeat(bins,nbins+1)
+		llcl_out=np.sum(y1,-1)/np.sum(w1,-1)
+		#llcl_out.insert(0,np.sum(y[:bins/2]*w[:bins/2])/np.sum(w[:bins/2]))	
+		std_llcl=np.std(y2,-1)
+		#std_llcl.insert(0,np.std(y[:bins/2]))
+		l_out = np.sum(l1,-1)/np.sum(n1,-1)
+		#l_out.insert(0,np.mean(l[:bins/2]))
+		#llcl_out=np.array(llcl_out)
+		#l_out=np.array(l_out)
+		#std_llcl=np.array(std_llcl)
+		dl=np.full((nspec,nbins),bins)
 	else:	##irregular binning
 		lmax=np.max(bins) -1
 		nbins = nb-1
@@ -68,9 +68,9 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 		if flatten:
 			y*=(l*(l+1)/(2*np.pi))
 		l_out=np.zeros(nbins)
-		llcl_out=np.zeros(nbins)
-		std_llcl=np.zeros(nbins)
-		dl=np.zeros(nbins)
+		llcl_out=np.zeros(nbins,nspec)
+		std_llcl=np.zeros(nbins,nspec)
+		dl=np.zeros(nbins,npsec)
 		for i in xrange(nbins):
 			l_out[i] = np.mean(l[bins[i]:bins[i+1] ])
 			dl[i]=bins[i+1]-bins[i]
@@ -78,5 +78,12 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 			std_llcl[i] = np.std(y[bins[i]:bins[i+1]])
 	dllcl=abs(llcl_out)*np.sqrt(2./(2*l_out+1)/dl)
 	deltal=dl
+
+	if nspec==1:
+		llcl_out = llcl_out.flatten()
+		dllcl = dllcl.flatten()
+		deltal = deltal.flatten()
+		std_llcl = std_llcl.flatten()
+
 	return {'llcl':llcl_out,'l_out':l_out,'dllcl':dllcl,'deltal':deltal,'std_llcl':std_llcl}
 
