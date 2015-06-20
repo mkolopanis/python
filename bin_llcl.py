@@ -1,5 +1,49 @@
 import numpy as np
 def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
+	"""Bins Continuous Angular Power Spectrum 
+	
+	Parameters
+	---------
+	llcl_in: float, array-like shape (lmax,) or (Nspec,lmax)
+		Spectra are assumed to be multiplied by l*(l+1)/(2 * pi).
+		Either an singular continuous angular power spectrum,
+		or a sequence of Nspec continuous angular power spectrum.
+	ubin: int, scalar or array
+		 bin size of output power spectrum
+		 Accepts integer argument for constant l-space bins or array 
+		 of irregularly sized bins
+	uniform: bool, scalar, optional
+		 if True uses uniform weighting of Cls (instead of 2*l+1)
+		 default = False
+	flatten: bool, scalar, optional
+		if True multiplies input power spectrum by l*(l+1)/(2 * pi)
+		default = False
+
+
+	Returns
+	-------
+	bn_spec: dictionary of arrays or dictionary of sequence of arrays
+	    keys:
+		l_out: int, array, (nbins,)
+		    l values of binned power spectra
+		
+		deltal: int, arrray, (nbins,)
+		    size of l-bins		
+
+	        llcl: float, array or sequence of arrays, (nbins,) or (nspec,nbins)
+		    Binned Angular Power spectrum
+
+		dllcl: float, array or sequence of arrays, (nbins,) or (nspec,nbins)
+		    Cosmic Variance of Binned Angular Power Spectrum
+
+		std_llcl: float, array or sequence of arrays, (nbins,) or (nspec,nbins)
+		    Standard Deviation of angular power spectrum in l-bin
+
+	"""
+
+
+
+
 	if np.min(ubin) < 0:
 		print 'bins must be positive'
 		return
@@ -85,5 +129,6 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 		deltal = deltal.flatten()
 		std_llcl = std_llcl.flatten()
 
-	return {'llcl':llcl_out,'l_out':l_out,'dllcl':dllcl,'deltal':deltal,'std_llcl':std_llcl}
+	bn_spec = {'l_out':l_out,'deltal':deltal,'llcl':llcl_out,'dllcl':dllcl,'std_llcl':std_llcl}
 
+	return  bn_spec
