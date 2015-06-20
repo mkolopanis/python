@@ -1,6 +1,7 @@
 import numpy as np
 def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
-	"""Bins Continuous Angular Power Spectrum 
+	"""Bins Continuous Angular Power Spectrum into discrete 
+	    bins of even or irregularly spaced sizes
 	
 	Parameters
 	---------
