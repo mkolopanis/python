@@ -1,5 +1,5 @@
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import healpy as hp
@@ -29,48 +29,7 @@ synchrotron_file='/data/Planck/COM_CompMap_SynchrotronPol-commander_0256_R2.00.f
 dust_file='/data/Planck/COM_CompMap_DustPol-commander_1024_R2.00.fits'
 
 def likelihood(cross,dcross,theory,mask_name,title):
-	a_scales=np.linspace(-5000,5000,50000)
-	chi_array=[]
-	for a in a_scales:
-		chi_array.append(np.exp(-.5*np.sum( (cross - a*theory)**2/(dcross)**2)))
-	chi_array /= np.max(chi_array)
-	chi_sum = np.cumsum(chi_array)
-	chi_sum /= chi_sum[-1]
 	
-	mean = a_scales[np.argmax(chi_array)]
-	
-	s1lo,s1hi = a_scales[chi_sum<0.1586][-1],a_scales[chi_sum>1-0.1586][0]
-	s2lo,s2hi = a_scales[chi_sum<0.0227][-1],a_scales[chi_sum>1-0.0227][0]
-
-	fig,ax1=plt.subplots(1,1)
-
-	ax1.plot(a_scales,chi_array,'k',linewidth=2)
-	ax1.vlines(s1lo,0,1,linewidth=2,color='blue')
-	ax1.vlines(s1hi,0,1,linewidth=2,color='blue')
-	ax1.vlines(s2lo,0,1,linewidth=2,color='orange')
-	ax1.vlines(s2hi,0,1,linewidth=2,color='orange')
-	ax1.set_title('Faraday Rotatior Posterior')
-	ax1.set_xlabel('Likelihood scalar')
-	ax1.set_ylabel('Likelihood of Correlation')
-	if np.max(abs(np.array([s2hi,s2lo]))) > 1000:
-		ax1.set_xlim([-5000,5000])
-	elif np.max(abs(np.array([s2hi,s2lo]))) > 500:
-		ax1.set_xlim([-1000,1000])
-	elif np.max(abs(np.array([s2hi,s2lo]))) > 200:
-		ax1.set_xlim([-500,500])
-	elif np.max(abs(np.array([s2hi,s2lo]))) > 100:
-		ax1.set_xlim([-200,200])
-	elif np.max(abs(np.array([s2hi,s2lo]))) > 50:
-		ax1.set_xlim([-100,100])
-	elif np.max(abs(np.array([s2hi,s2lo]))) > 10:
-		ax1.set_xlim([-50,50])
-	else:
-		ax1.set_xlim([-10,10])
-		
-	fig.savefig('FR_correlation_likelihood_'+mask_name+'_'+title+'.png',format='png')
-	fig.savefig('FR_correlation_likelihood_'+mask_name+'_'+title+'.eps',format='eps')
-
-
 	Sig=np.sum(cross/(dcross**2))/np.sum(1./dcross**2)
 	#Noise=np.std(np.sum(cross_array/dcross**2,axis=1)/np.sum(1./dcross**2))	\
 	Noise=np.sqrt(1./np.sum(1./dcross**2))
@@ -79,21 +38,67 @@ def likelihood(cross,dcross,theory,mask_name,title):
 	SNR=Sig/Noise
 	SNR1=Sig1/Noise1
 	
-	#ipdb.set_trace()
-	#ipdb.set_trace()
-	f=open('Maximum_likelihood_'+mask_name+'_'+title+'.txt','w')
-	f.write('Maximum Likelihood: {0:2.5f}%  for scale factor {1:.2f} \n'.format(float(chi_array[np.argmax(chi_array)]*100),mean))
-	#f.write('Probability of scale factor =1: {0:2.5f}% \n'.format(float(chi_array[np.where(a_scales ==1)])*100))
-	f.write('Posterior: Mean,\t(1siglo,1sighi),\t(2sighlo,2sighi)\n')
-	f.write('Posterior: {0:.3f}\t({1:.3f},{2:.3f})\t({3:.3f},{4:.3f}) '.format(mean, s1lo,s1hi, s2lo,s2hi))
-	f.write('\n\n')
-	f.write('Detection Levels using Standard Deviation \n')
-	f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR,Sig, Noise))
-	f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n \n'.format(SNR1,Sig1,Noise1))
-	#f.write('Detection using Theoretical Noise \n')
-	#f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR2,Sig2, Noise2))
-	#f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR3,Sig3,Noise3))
-	f.close()
+	a_scales=np.linspace(-1000,1000,100000)
+	
+	chi_array=[]
+	for a in a_scales:
+		chi_array.append(np.exp(-.5*np.sum( (cross - a*theory)**2/(dcross)**2)))
+	chi_array /= np.max(chi_array)
+	chi_sum = np.cumsum(chi_array)
+	chi_sum /= chi_sum[-1]
+	
+	mean = a_scales[np.argmax(chi_array)]
+	fig,ax1=plt.subplots(1,1)
+	try:
+		s1lo,s1hi = a_scales[chi_sum<0.1586][-1],a_scales[chi_sum>1-0.1586][0]
+		s2lo,s2hi = a_scales[chi_sum<0.0227][-1],a_scales[chi_sum>1-0.0227][0]
+	
+
+		ax1.vlines(s1lo,0,1,linewidth=2,color='blue')
+		ax1.vlines(s1hi,0,1,linewidth=2,color='blue')
+		ax1.vlines(s2lo,0,1,linewidth=2,color='orange')
+		ax1.vlines(s2hi,0,1,linewidth=2,color='orange')
+		if np.max(abs(np.array([s2hi,s2lo]))) > 5000:
+			ax1.set_xlim([-10000,10000])
+		elif np.max(abs(np.array([s2hi,s2lo]))) > 1000:
+			ax1.set_xlim([-5000,5000])
+		elif np.max(abs(np.array([s2hi,s2lo]))) > 500:
+			ax1.set_xlim([-1000,1000])
+		elif np.max(abs(np.array([s2hi,s2lo]))) > 200:
+			ax1.set_xlim([-500,500])
+		elif np.max(abs(np.array([s2hi,s2lo]))) > 100:
+			ax1.set_xlim([-200,200])
+		elif np.max(abs(np.array([s2hi,s2lo]))) > 50:
+			ax1.set_xlim([-100,100])
+		elif  np.max(abs(np.array([s2hi,s2lo]))) > 20:
+			ax1.set_xlim([-40,40])
+		elif  np.max(abs(np.array([s2hi,s2lo]))) > 10:
+			ax1.set_xlim([-20,20])
+		else:
+			ax1.set_xlim([-10,10])
+		f=open('Maximum_likelihood_simulation_'+mask_name+'_'+title+'.txt','w')
+		f.write('Maximum Likelihood: {0:2.5f}%  for scale factor {1:.2f} \n'.format(float(chi_array[np.argmax(chi_array)]*100),mean))
+		#f.write('Probability of scale factor =1: {0:2.5f}% \n'.format(float(chi_array[np.where(a_scales ==1)])*100))
+		f.write('Posterior: Mean,\t(1siglo,1sighi),\t(2sighlo,2sighi)\n')
+		f.write('Posterior: {0:.3f}\t({1:.3f},{2:.3f}),\t({3:.3f},{4:.3f}) '.format(mean, s1lo,s1hi, s2lo,s2hi))
+		f.write('\n\n')
+		f.write('Detection Levels using Standard Deviation \n')
+		f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR,Sig, Noise))
+		f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n \n'.format(SNR1,Sig1,Noise1))
+		#f.write('Detection using Theoretical Noise \n')
+		#f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR2,Sig2, Noise2))
+		#f.write('Weighted Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR3,Sig3,Noise3))
+		f.close()
+
+	except:
+		print('Scale exceeded for possterior. \n Plotting anyway')
+	ax1.plot(a_scales,chi_array,'k',linewidth=2)
+	ax1.set_title('Faraday Rotatior Posterior')
+	ax1.set_xlabel('$\\beta$')
+	ax1.set_ylabel('Likelihood of Correlation')
+		
+	fig.savefig('FR_simulation_likelihood_'+mask_name+'_'+title+'.png',format='png')
+	fig.savefig('FR_simulation_likelihood_'+mask_name+'_'+title+'.eps',format='eps')
 
 def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False):
 	print "Computing Cross Correlations for Bands "+str(bands)
@@ -101,9 +106,13 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False)
 	q_fwhm=[27.3,11.7]
 	#noise_const=np.array([36./f for f in q_fwhm])*1e-6
 	npix=hp.nside2npix(1024)
-	sigma_i=[noise_const[0]*np.random.normal(0,1,npix),noise_const[0]*np.random.normal(0,1,npix)]
-	sigma_j=[noise_const[1]*np.random.normal(0,1,npix),noise_const[1]*np.random.normal(0,1,npix)]
+	sigma_q_i,sigma_u_i=[noise_const[0]*np.random.normal(0,1,npix),noise_const[0]*np.random.normal(0,1,npix)]
+	sigma_q_j,sigma_u_j=[noise_const[1]*np.random.normal(0,1,npix),noise_const[1]*np.random.normal(0,1,npix)]
 
+#	sigma_q_i=hp.smoothing(sigma_i[0],fwhm=q_fwhm[0]*np.pi/(180.*60.),verbose=False)	
+#	sigma_u_i=hp.smoothing(sigma_i[1],fwhm=q_fwhm[0]*np.pi/(180.*60.),verbose=False)	
+#	sigma_q_j=hp.smoothing(sigma_j[0],fwhm=q_fwhm[1]*np.pi/(180.*60.),verbose=False)	
+#	sigma_u_j=hp.smoothing(sigma_j[1],fwhm=q_fwhm[1]*np.pi/(180.*60.),verbose=False)	
 
 	hdu_i=fits.open(i_file)
 	hdu_j=fits.open(j_file)
@@ -124,17 +133,17 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False)
 	#pix_bad=np.where(mask == 0)
 	field_pixels=hdu_i['FIELD PIXELS'].data
 	
-	iqu_band_i[1]+=sigma_i[0]
-	iqu_band_i[2]+=sigma_i[1]
-	iqu_band_j[1]+=sigma_j[0]
-	iqu_band_j[2]+=sigma_j[1]
+	iqu_band_i[1]+=np.copy(sigma_q_i)
+	iqu_band_i[2]+=np.copy(sigma_u_i)
+	iqu_band_j[1]+=np.copy(sigma_q_j)
+	iqu_band_j[2]+=np.copy(sigma_u_j)
 	hdu_i.close()
 	hdu_j.close()
 	
-	sigma_q_i=hp.smoothing(sigma_i[0],fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[0])**2)*np.pi/(180.*60.),verbose=False)	
-	sigma_u_i=hp.smoothing(sigma_i[1],fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[0])**2)*np.pi/(180.*60.),verbose=False)	
-	sigma_q_j=hp.smoothing(sigma_j[0],fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[1])**2)*np.pi/(180.*60.),verbose=False)	
-	sigma_u_j=hp.smoothing(sigma_j[1],fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[1])**2)*np.pi/(180.*60.),verbose=False)	
+	sigma_q_i=hp.smoothing(sigma_q_i,fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[0])**2)*np.pi/(180.*60.),verbose=False)	
+	sigma_u_i=hp.smoothing(sigma_u_i,fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[0])**2)*np.pi/(180.*60.),verbose=False)	
+	sigma_q_j=hp.smoothing(sigma_q_j,fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[1])**2)*np.pi/(180.*60.),verbose=False)	
+	sigma_u_j=hp.smoothing(sigma_u_j,fwhm=np.sqrt((smoothing_scale)**2-(q_fwhm[1])**2)*np.pi/(180.*60.),verbose=False)	
 
 	sigma_q_i=hp.ud_grade(sigma_q_i,128)
 	sigma_u_i=hp.ud_grade(sigma_u_i,128)
@@ -148,41 +157,41 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False)
 	iqu_band_i=hp.ud_grade(iqu_band_i,nside_out=128,order_in='ring')
 	iqu_band_j=hp.ud_grade(iqu_band_j,nside_out=128,order_in='ring')
 	
-	hdu_sync=fits.open(synchrotron_file)
-	sync_q=hdu_sync[1].data.field(0)
-	sync_u=hdu_sync[1].data.field(1)
-	
-	sync_q=hp.reorder(sync_q,n2r=1)
-	sync_q=hp.ud_grade(sync_q,nside_out=128)
-	
-	sync_u=hp.reorder(sync_u,n2r=1)
-	sync_u=hp.ud_grade(sync_u,nside_out=128)
-	hdu_sync.close()
-	
-	hdu_dust=fits.open(dust_file)
-	dust_q=hdu_dust[1].data.field(0)
-	dust_u=hdu_dust[1].data.field(1)
-	hdu_dust.close()
-	
-	dust_q=hp.reorder(dust_q,n2r=1)
-	dust_q=hp.smoothing(dust_q,fwhm=np.sqrt(smoothing_scale**2-10.0**2)*np.pi/(180.*60.),verbose=False)
-	dust_q=hp.ud_grade(dust_q,128)
-	
-	dust_u=hp.reorder(dust_u,n2r=1)
-	dust_u=hp.smoothing(dust_u,fwhm=np.sqrt(smoothing_scale**2-10.0**2)*np.pi/(180.*60.),verbose=False)
-	dust_u=hp.ud_grade(dust_u,128)
+	#hdu_sync=fits.open(synchrotron_file)
+	#sync_q=hdu_sync[1].data.field(0)
+	#sync_u=hdu_sync[1].data.field(1)
+	#
+	#sync_q=hp.reorder(sync_q,n2r=1)
+	#sync_q=hp.ud_grade(sync_q,nside_out=128)
+	#
+	#sync_u=hp.reorder(sync_u,n2r=1)
+	#sync_u=hp.ud_grade(sync_u,nside_out=128)
+	#hdu_sync.close()
+	#
+	#hdu_dust=fits.open(dust_file)
+	#dust_q=hdu_dust[1].data.field(0)
+	#dust_u=hdu_dust[1].data.field(1)
+	#hdu_dust.close()
+	#
+	#dust_q=hp.reorder(dust_q,n2r=1)
+	#dust_q=hp.smoothing(dust_q,fwhm=np.sqrt(smoothing_scale**2-10.0**2)*np.pi/(180.*60.),verbose=False)
+	#dust_q=hp.ud_grade(dust_q,128)
+	#
+	#dust_u=hp.reorder(dust_u,n2r=1)
+	#dust_u=hp.smoothing(dust_u,fwhm=np.sqrt(smoothing_scale**2-10.0**2)*np.pi/(180.*60.),verbose=False)
+	#dust_u=hp.ud_grade(dust_u,128)
 
 
 
-	iqu_band_i[1]-= sync_q*np.sum(iqu_band_i[1]*sync_q/sigma_q_i**2)/np.sum((sync_q/sigma_q_i)**2)		
-	iqu_band_i[1]-= dust_q*np.sum(iqu_band_i[1]*dust_q/sigma_q_i**2)/np.sum((dust_q/sigma_q_i)**2)		
-	iqu_band_i[2]-= sync_u*np.sum(iqu_band_i[2]*sync_u/sigma_u_i**2)/np.sum((sync_u/sigma_u_i)**2)		
-	iqu_band_i[2]-= dust_u*np.sum(iqu_band_i[2]*dust_u/sigma_u_i**2)/np.sum((dust_u/sigma_u_i)**2)		
-	
-	iqu_band_j[1]-= sync_q*np.sum(iqu_band_j[1]*sync_q/sigma_q_j**2)/np.sum((sync_q/sigma_q_j)**2)		
-	iqu_band_j[1]-= dust_q*np.sum(iqu_band_j[1]*dust_q/sigma_q_j**2)/np.sum((dust_q/sigma_q_j)**2)		
-	iqu_band_j[2]-= sync_u*np.sum(iqu_band_j[2]*sync_u/sigma_u_j**2)/np.sum((sync_u/sigma_u_j)**2)	
-	iqu_band_j[2]-= dust_u*np.sum(iqu_band_j[2]*dust_u/sigma_u_j**2)/np.sum((dust_u/sigma_u_j)**2)	
+	#iqu_band_i[1]-= sync_q*np.sum(iqu_band_i[1]*sync_q/sigma_q_i**2)/np.sum((sync_q/sigma_q_i)**2)		
+	#iqu_band_i[1]-= dust_q*np.sum(iqu_band_i[1]*dust_q/sigma_q_i**2)/np.sum((dust_q/sigma_q_i)**2)		
+	#iqu_band_i[2]-= sync_u*np.sum(iqu_band_i[2]*sync_u/sigma_u_i**2)/np.sum((sync_u/sigma_u_i)**2)		
+	#iqu_band_i[2]-= dust_u*np.sum(iqu_band_i[2]*dust_u/sigma_u_i**2)/np.sum((dust_u/sigma_u_i)**2)		
+	#
+	#iqu_band_j[1]-= sync_q*np.sum(iqu_band_j[1]*sync_q/sigma_q_j**2)/np.sum((sync_q/sigma_q_j)**2)		
+	#iqu_band_j[1]-= dust_q*np.sum(iqu_band_j[1]*dust_q/sigma_q_j**2)/np.sum((dust_q/sigma_q_j)**2)		
+	#iqu_band_j[2]-= sync_u*np.sum(iqu_band_j[2]*sync_u/sigma_u_j**2)/np.sum((sync_u/sigma_u_j)**2)	
+	#iqu_band_j[2]-= dust_u*np.sum(iqu_band_j[2]*dust_u/sigma_u_j**2)/np.sum((dust_u/sigma_u_j)**2)	
 
 
 	const=2.*(wl_i**2-wl_j**2)	
@@ -246,10 +255,14 @@ def faraday_correlate_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False)
 		
 
 		##calculate theoretical variance for correlations
-		Ndq_array.append((abs((sqi-sqj))**2).sum()*(pix_area/const)**2/(4.*np.pi))
-		Ndu_array.append((abs((sui-suj))**2).sum()*(pix_area/const)**2/(4.*np.pi))
-		Nau_array.append((abs((salpha*um+alpham*suj+salpha*suj))**2).sum()*pix_area**2/(4.*np.pi))
-		Naq_array.append((abs((salpha*qm+alpham*sqj+salpha*sqj))**2).sum()*pix_area**2/(4.*np.pi))
+		#Ndq_array.append((sqi**2+sqj**2).sum()*(pix_area/const)**2/(4.*np.pi))
+		#Ndu_array.append((sui**2+suj**2).sum()*(pix_area/const)**2/(4.*np.pi))
+		#Nau_array.append(((salpha*um+alpham*suj+salpha*suj)**2).sum()*pix_area**2/(4.*np.pi))
+		#Naq_array.append(((salpha*qm+alpham*sqj+salpha*sqj)**2).sum()*pix_area**2/(4.*np.pi))
+		Ndq_array.append(hp.anafast(sqi,map2=sqj))
+		Ndu_array.append(hp.anafast(sui,map2=suj))
+		Nau_array.append(hp.anafast(um,map2=salpha)+hp.anafast(suj,map2=alpham)+hp.anafast(suj,map2=salpha))
+		Naq_array.append(hp.anafast(qm,map2=salpha)+hp.anafast(suj,map2=alpham)+hp.anafast(sqj,map2=salpha))
 		#ipdb.set_trace()
 		
         
@@ -316,41 +329,41 @@ def faraday_noise_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands,beam=False):
 	sigma_q_j=hp.ud_grade(sigma_q_j,128)
 	sigma_u_j=hp.ud_grade(sigma_u_j,128)
 	
-	hdu_sync=fits.open(synchrotron_file)
-	sync_q=hdu_sync[1].data.field(0)
-	sync_u=hdu_sync[1].data.field(1)
-	
-	sync_q=hp.reorder(sync_q,n2r=1)
-	sync_q=hp.ud_grade(sync_q,nside_out=128)
-	
-	sync_u=hp.reorder(sync_u,n2r=1)
-	sync_u=hp.ud_grade(sync_u,nside_out=128)
-	hdu_sync.close()
-	
-	hdu_dust=fits.open(dust_file)
-	dust_q=hdu_dust[1].data.field(0)
-	dust_u=hdu_dust[1].data.field(1)
-	hdu_dust.close()
-	
-	dust_q=hp.reorder(dust_q,n2r=1)
-	dust_q=hp.smoothing(dust_q,fwhm=np.sqrt(smoothing_scale**2-10.0**2)*np.pi/(180.*60.),verbose=False)
-	dust_q=hp.ud_grade(dust_q,128)
-	
-	dust_u=hp.reorder(dust_u,n2r=1)
-	dust_u=hp.smoothing(dust_u,fwhm=np.sqrt(smoothing_scale**2-10.0**2)*np.pi/(180.*60.),verbose=False)
-	dust_u=hp.ud_grade(dust_u,128)
+	#hdu_sync=fits.open(synchrotron_file)
+	#sync_q=hdu_sync[1].data.field(0)
+	#sync_u=hdu_sync[1].data.field(1)
+	#
+	#sync_q=hp.reorder(sync_q,n2r=1)
+	#sync_q=hp.ud_grade(sync_q,nside_out=128)
+	#
+	#sync_u=hp.reorder(sync_u,n2r=1)
+	#sync_u=hp.ud_grade(sync_u,nside_out=128)
+	#hdu_sync.close()
+	#
+	#hdu_dust=fits.open(dust_file)
+	#dust_q=hdu_dust[1].data.field(0)
+	#dust_u=hdu_dust[1].data.field(1)
+	#hdu_dust.close()
+	#
+	#dust_q=hp.reorder(dust_q,n2r=1)
+	#dust_q=hp.smoothing(dust_q,fwhm=np.sqrt(smoothing_scale**2-10.0**2)*np.pi/(180.*60.),verbose=False)
+	#dust_q=hp.ud_grade(dust_q,128)
+	#
+	#dust_u=hp.reorder(dust_u,n2r=1)
+	#dust_u=hp.smoothing(dust_u,fwhm=np.sqrt(smoothing_scale**2-10.0**2)*np.pi/(180.*60.),verbose=False)
+	#dust_u=hp.ud_grade(dust_u,128)
 
 
 
-	iqu_band_i[1]-= sync_q*np.sum(iqu_band_i[1]*sync_q/sigma_q_i**2)/np.sum((sync_q/sigma_q_i)**2)		
-	iqu_band_i[1]-= dust_q*np.sum(iqu_band_i[1]*dust_q/sigma_q_i**2)/np.sum((dust_q/sigma_q_i)**2)		
-	iqu_band_i[2]-= sync_u*np.sum(iqu_band_i[2]*sync_u/sigma_u_i**2)/np.sum((sync_u/sigma_u_i)**2)		
-	iqu_band_i[2]-= dust_u*np.sum(iqu_band_i[2]*dust_u/sigma_u_i**2)/np.sum((dust_u/sigma_u_i)**2)		
-	
-	iqu_band_j[1]-= sync_q*np.sum(iqu_band_j[1]*sync_q/sigma_q_j**2)/np.sum((sync_q/sigma_q_j)**2)		
-	iqu_band_j[1]-= dust_q*np.sum(iqu_band_j[1]*dust_q/sigma_q_j**2)/np.sum((dust_q/sigma_q_j)**2)		
-	iqu_band_j[2]-= sync_u*np.sum(iqu_band_j[2]*sync_u/sigma_u_j**2)/np.sum((sync_u/sigma_u_j)**2)	
-	iqu_band_j[2]-= dust_u*np.sum(iqu_band_j[2]*dust_u/sigma_u_j**2)/np.sum((dust_u/sigma_u_j)**2)	
+	#iqu_band_i[1]-= sync_q*np.sum(iqu_band_i[1]*sync_q/sigma_q_i**2)/np.sum((sync_q/sigma_q_i)**2)		
+	#iqu_band_i[1]-= dust_q*np.sum(iqu_band_i[1]*dust_q/sigma_q_i**2)/np.sum((dust_q/sigma_q_i)**2)		
+	#iqu_band_i[2]-= sync_u*np.sum(iqu_band_i[2]*sync_u/sigma_u_i**2)/np.sum((sync_u/sigma_u_i)**2)		
+	#iqu_band_i[2]-= dust_u*np.sum(iqu_band_i[2]*dust_u/sigma_u_i**2)/np.sum((dust_u/sigma_u_i)**2)		
+	#
+	#iqu_band_j[1]-= sync_q*np.sum(iqu_band_j[1]*sync_q/sigma_q_j**2)/np.sum((sync_q/sigma_q_j)**2)		
+	#iqu_band_j[1]-= dust_q*np.sum(iqu_band_j[1]*dust_q/sigma_q_j**2)/np.sum((dust_q/sigma_q_j)**2)		
+	#iqu_band_j[2]-= sync_u*np.sum(iqu_band_j[2]*sync_u/sigma_u_j**2)/np.sum((sync_u/sigma_u_j)**2)	
+	#iqu_band_j[2]-= dust_u*np.sum(iqu_band_j[2]*dust_u/sigma_u_j**2)/np.sum((dust_u/sigma_u_j)**2)	
 
 
 	Weight1=np.repeat(1.,len(iqu_band_i[0]))
@@ -428,8 +441,8 @@ def faraday_theory_quiet(i_file,j_file,wl_i,wl_j,alpha_file,bands_name,beam=Fals
 	for i in range(num_wl):
 		tmp_cmb=rotate_tqu.rotate_tqu(simul_cmb,wl[i],alpha_radio);
 		t_array[i],q_array[i],u_array[i]=hp.smoothing(tmp_cmb,fwhm=q_fwhm[i]*np.pi/(180.*60.),verbose=False)
-	iqu_band_i=[t_array[0],q_array[0],u_array[0]]	
-	iqu_band_j=[t_array[1],q_array[1],u_array[1]]	
+	iqu_band_i=np.array([t_array[0],q_array[0],u_array[0]])
+	iqu_band_j=np.array([t_array[1],q_array[1],u_array[1]])	
 
 
 	hdu_i=fits.open(i_file)
@@ -526,34 +539,38 @@ def plot_mc():
 	
 	bins=[1,5,10,20,25,50]
 #	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)**2
-	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)**2
+	#bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)**2
+	bls=(hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)*hp.pixwin(nside_out)[3*nside_out])**2
+	#bls=np.repeat(1,3*nside_out)
 	fsky=225.*(np.pi/180.)**2/(4*np.pi)
 	l=np.arange(len(cross1_array_in[0]))
 	ll=l*(l+1)/(2*np.pi)
 	L=np.sqrt(fsky*4*np.pi)
 	dl_eff=2*np.pi/L
-	theory1_array_in=np.array(theory1_array_in)/fsky
-	theory2_array_in=np.array(theory2_array_in)/fsky
-	cross1_array_in=np.array(cross1_array_in)/fsky
-	cross2_array_in=np.array(cross2_array_in)/fsky
-	Ndq_array_in=np.array(Ndq_array_in)/fsky
-	Ndu_array_in=np.array(Ndu_array_in)/fsky
-	Nau_array_in=np.array(Nau_array_in)/fsky
-	Naq_array_in=np.array(Naq_array_in)/fsky
-	noise1_array_in=np.array(noise1_array_in)/fsky
-	noise2_array_in=np.array(noise2_array_in)/fsky
+	theory1_array_in=np.array(theory1_array_in)/(fsky*bls)
+	theory2_array_in=np.array(theory2_array_in)/(fsky*bls)
+	cross1_array_in=np.array(cross1_array_in)/(fsky*bls)
+	cross2_array_in=np.array(cross2_array_in)/(fsky*bls)
+	Ndq_array_in=np.array(Ndq_array_in)/(fsky)*np.mean(1./bls)
+	Ndu_array_in=np.array(Ndu_array_in)/(fsky)*np.mean(1./bls)
+	Nau_array_in=np.array(Nau_array_in)/(fsky)*np.mean(1./bls)
+	Naq_array_in=np.array(Naq_array_in)/(fsky)*np.mean(1./bls)
+	noise1_array_in=np.array(noise1_array_in)/(fsky*bls)
+	noise2_array_in=np.array(noise2_array_in)/(fsky*bls)
 
 	for b in bins:
 		theory_cls=hp.read_cl('/home/matt/Planck/data/faraday/correlation/fr_theory_cl.fits')
 		N_dq=np.mean(Ndq_array_in)
 		N_au=np.mean(Nau_array_in)
-		delta1=np.sqrt(2.*abs((np.mean(cross1_array_in,axis=0)-np.mean(noise1_array_in,axis=0))**2+(np.mean(cross1_array_in,axis=0)-np.mean(noise1_array_in,axis=0))/2.*(N_dq+N_au)+N_dq*N_au/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
+		#delta1=np.sqrt(2.*abs((np.mean(cross1_array_in,axis=0)-np.mean(noise1_array_in,axis=0))**2+(np.mean(cross1_array_in,axis=0)-np.mean(noise1_array_in,axis=0))/2.*(N_dq+N_au)+N_dq*N_au/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
+		delta1=np.sqrt(2.*abs((np.mean(theory1_array_in,axis=0))**2+(np.mean(theory1_array_in,axis=0))/2.*(N_dq+N_au)+N_dq*N_au/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
 	
 		cosmic1=np.sqrt(2./((2.*l+1)*np.sqrt(b**2+dl_eff**2)*fsky)*np.mean(theory1_array_in,axis=0)**2)
 
 		N_du=np.mean(Ndu_array_in)
 		N_aq=np.mean(Naq_array_in)
-		delta2=np.sqrt(2.*abs((np.mean(cross2_array_in,axis=0)-np.mean(noise2_array_in,axis=0))**2+(np.mean(cross2_array_in,axis=0)-np.mean(noise2_array_in,axis=0))/2.*(N_dq+N_au)+N_dq*N_au/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
+		#delta2=np.sqrt(2.*abs((np.mean(cross2_array_in,axis=0)-np.mean(noise2_array_in,axis=0))**2+(np.mean(cross2_array_in,axis=0)-np.mean(noise2_array_in,axis=0))/2.*(N_dq+N_au)+N_dq*N_au/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
+		delta2=np.sqrt(2.*abs((np.mean(theory2_array_in,axis=0))**2+(np.mean(theory2_array_in,axis=0))/2.*(N_du+N_aq)+N_du*N_aq/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
 		cosmic2=np.sqrt(2./((2*l+1)*np.sqrt(b**2+dl_eff**2)*fsky)*np.mean(theory2_array_in,axis=0)**2)
 
         	theory1_array=[]
@@ -571,12 +588,12 @@ def plot_mc():
 		plot_l=[]
 		if( b != 1):
 	        	for n in xrange(len(cross1_array_in)):
-	        	        tmp_t1=bin_llcl.bin_llcl(ll*theory1_array_in[n]/bls,b)
-	        	        tmp_t2=bin_llcl.bin_llcl(ll*theory2_array_in[n]/bls,b)
-				tmp_c1=bin_llcl.bin_llcl(ll*cross1_array_in[n]/bls,b)
-	        	        tmp_c2=bin_llcl.bin_llcl(ll*cross2_array_in[n]/bls,b)
-				tmp_n1=bin_llcl.bin_llcl(ll*noise1_array_in[n]/bls,b)
-	        	        tmp_n2=bin_llcl.bin_llcl(ll*noise2_array_in[n]/bls,b)
+	        	        tmp_t1=bin_llcl.bin_llcl(ll*theory1_array_in[n],b)
+	        	        tmp_t2=bin_llcl.bin_llcl(ll*theory2_array_in[n],b)
+				tmp_c1=bin_llcl.bin_llcl(ll*cross1_array_in[n],b)
+	        	        tmp_c2=bin_llcl.bin_llcl(ll*cross2_array_in[n],b)
+				tmp_n1=bin_llcl.bin_llcl(ll*noise1_array_in[n],b)
+	        	        tmp_n2=bin_llcl.bin_llcl(ll*noise2_array_in[n],b)
 	        	        
 				theory1_array.append(tmp_t1['llcl'])
 				theory2_array.append(tmp_t2['llcl'])
@@ -589,49 +606,52 @@ def plot_mc():
 	        	        
 				if n == len(cross1_array_in)-1:
 	        	                plot_l=tmp_c1['l_out']
-			tmp_c1=bin_llcl.bin_llcl(ll*cosmic1/bls,b)
-			tmp_d1=bin_llcl.bin_llcl(ll*delta1/bls,b)
+			tmp_c1=bin_llcl.bin_llcl((ll*cosmic1)**2,b)
+			tmp_d1=bin_llcl.bin_llcl((ll*delta1)**2,b)
 		
-			cosmic1=tmp_c1['llcl']
-			delta1=tmp_d1['llcl']
+			cosmic1=np.sqrt(tmp_c1['llcl'])
+			delta1=np.sqrt(tmp_d1['llcl'])
 
-			tmp_c2=bin_llcl.bin_llcl(ll*cosmic2/bls,b)
-			tmp_d2=bin_llcl.bin_llcl(ll*delta2/bls,b)
-			cosmic2=tmp_c2['llcl']
-			delta2=tmp_d2['llcl']
+			tmp_c2=bin_llcl.bin_llcl((ll*cosmic2)**2,b)
+			tmp_d2=bin_llcl.bin_llcl((ll*delta2)**2,b)
+			cosmic2=np.sqrt(tmp_c2['llcl'])
+			delta2=np.sqrt(tmp_d2['llcl'])
 			t_tmp=bin_llcl.bin_llcl(ll*theory_cls,b)
 			theory_cls=t_tmp['llcl']
 		else:
 			plot_l=l
-			theory1_array=np.multiply(ll/bls,theory1_array_in)
-			cross1_array=np.multiply(ll/bls,cross1_array_in)
-			noise1_array=np.multiply(ll/bls,noise1_array_in)
-			theory2_array=np.multiply(ll/bls,theory2_array_in)
-			cross2_array=np.multiply(ll/bls,cross2_array_in)
-			noise2_array=np.multiply(ll/bls,noise2_array_in)
-			cosmic1*=ll/bls
-			cosmic2*=ll/bls
-			delta1*=ll/bls
-			delta2*=ll/bls
+			theory1_array=np.multiply(ll,theory1_array_in)
+			cross1_array=np.multiply(ll,cross1_array_in)
+			noise1_array=np.multiply(ll,noise1_array_in)
+			theory2_array=np.multiply(ll,theory2_array_in)
+			cross2_array=np.multiply(ll,cross2_array_in)
+			noise2_array=np.multiply(ll,noise2_array_in)
+			cosmic1*=ll
+			cosmic2*=ll
+			delta1*=ll
+			delta2*=ll
 			theory_cls*=ll
+		#ipdb.set_trace()
 		bad=np.where(plot_l < 24)
 		noise1=np.mean(noise1_array,axis=0)
 		noise2=np.mean(noise2_array,axis=0)
         	theory_array = np.add(theory1_array,theory2_array)
         	theory=np.mean(theory_array,axis=0)
         	dtheory=np.std(theory_array,axis=0,ddof=1)
-        	cross_array = np.add(np.subtract(cross1_array,noise1),np.subtract(cross2_array,noise2))
+        	#cross_array = np.add(np.subtract(cross1_array,noise1),np.subtract(cross2_array,noise2))
+        	cross_array = np.add(cross1_array,cross2_array)
         	cross=np.mean(cross_array,axis=0)
-        	dcross=np.std(cross_array,axis=0,ddof=1)
+        	#dcross=np.std(cross_array,axis=0,ddof=1)
+        	dcross=np.sqrt( ( np.std(cross1_array,axis=0,ddof=1)**2 + np.std(cross2_array,axis=0,ddof=1)**2)/b)
         	cosmic=np.sqrt(cosmic1**2+cosmic2**2)
         	delta=np.sqrt(delta1**2+delta2**2)
-		cosmic=np.abs(theory_cls)*np.sqrt(2./((2*plot_l+1)*fsky*np.sqrt(dl_eff**2+b**2)))
+		#cosmic=np.abs(theory_cls)*np.sqrt(2./((2*plot_l+1)*fsky*np.sqrt(dl_eff**2+b**2)))
 		#theory1=np.mean(theory1_array,axis=0)
 		#dtheory1=np.std(theory1_array,axis=0,ddof=1)
 		#cross1=np.mean(cross1_array,axis=0)
 		#dcross1=np.std(np.subtract(cross1_array,noise1),axis=0,ddof=1)
 		#ipdb.set_trace()
-		plot_binned.plotBinned((cross)*1e12,dcross*1e12,plot_l,b,'Cross_43x95_FR_', title='Cross 43x95 FR Correlator',theory=theory_cls*1e12,dtheory=dtheory*1e12,delta=delta*1e12,cosmic=cosmic*1e12)
+		plot_binned.plotBinned((cross)*1e12,dcross*1e12,plot_l,b,'Cross_43x95_FR_', title='Cross 43x95 FR Correlator',theory=theory*1e12,dtheory=dtheory*1e12,delta=delta*1e12,cosmic=cosmic*1e12)
 
 		#theory2=np.mean(theory2_array,axis=0)
 		#dtheory2=np.std(theory2_array,axis=0,ddof=1)
@@ -643,11 +663,9 @@ def plot_mc():
 		#ipdb.set_trace()
     
 		if b == 25 :
-			likelihood(cross,dcross,theory,'field1','c2bfr')
-		
+			likelihood(cross[1:],dcross[1:],theory[1:],'field1','c2bfr')
 
 		#if b == 1 :
-		#	ipdb.set_trace()
 		#	xbar= np.matrix(ll[1:]*(cross-np.mean(cross))[1:]).T
 		#	vector=np.matrix(ll[1:]*cross[1:]).T
 		#	mu=np.matrix(ll[1:]*theory[1:]).T
@@ -747,8 +765,9 @@ def main():
 	##	Beam correction
 	use_beam=0
 #	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)**2
-	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)**2
-	N_runs=2
+	#bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)**2
+	bls=(hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)*hp.pixwin(nside_out)[3*nside_out])**2
+	N_runs=200
 	bins=[1,5,10,20,50]
 
 	map_prefix='/home/matt/quiet/quiet_maps/'
@@ -770,7 +789,7 @@ def main():
 	theory2_array_in=[]
 	
 
-	#simulate_fields.main()
+	simulate_fields.main()
 	#for n in xrange(N_runs):
 	for i in xrange(N_runs):	
 		print(Fore.WHITE+Back.GREEN+Style.BRIGHT+'Correlation #{:03d}'.format(i+1)+Back.RESET+Fore.RESET+Style.RESET_ALL)
@@ -836,27 +855,30 @@ def main():
 	L=np.sqrt(fsky*4*np.pi)
 	dl_eff=2*np.pi/L
 
-	theory1_array_in=np.array(theory1_array_in)/fsky
-	theory2_array_in=np.array(theory2_array_in)/fsky
-	cross1_array_in=np.array(cross1_array_in)/fsky
-	cross2_array_in=np.array(cross2_array_in)/fsky
-	Ndq_array_in=np.array(Ndq_array_in)/fsky
-	Ndu_array_in=np.array(Ndu_array_in)/fsky
-	Nau_array_in=np.array(Nau_array_in)/fsky
-	Naq_array_in=np.array(Naq_array_in)/fsky
-	noise1_array_in=np.array(noise1_array_in)/fsky
-	noise2_array_in=np.array(noise2_array_in)/fsky
+	theory1_array_in=np.array(theory1_array_in)/(fsky*bls)
+	theory2_array_in=np.array(theory2_array_in)/(fsky*bls)
+	cross1_array_in=np.array(cross1_array_in)/(fsky*bls)
+	cross2_array_in=np.array(cross2_array_in)/(fsky*bls)
+	Ndq_array_in=np.array(Ndq_array_in)/(fsky)*np.mean(1./bls)
+	Ndu_array_in=np.array(Ndu_array_in)/(fsky)*np.mean(1./bls)
+	Nau_array_in=np.array(Nau_array_in)/(fsky)*np.mean(1./bls)
+	Naq_array_in=np.array(Naq_array_in)/(fsky)*np.mean(1./bls)
+	noise1_array_in=np.array(noise1_array_in)/(fsky*bls)
+	noise2_array_in=np.array(noise2_array_in)/(fsky*bls)
 
 	for b in bins:
+		theory_cls=hp.read_cl('/home/matt/Planck/data/faraday/correlation/fr_theory_cl.fits')
 		N_dq=np.mean(Ndq_array_in)
 		N_au=np.mean(Nau_array_in)
-		delta1=np.sqrt(2.*abs((np.mean(cross1_array_in,axis=0)-np.mean(noise1_array_in,axis=0))**2+(np.mean(cross1_array_in,axis=0)-np.mean(noise1_array_in,axis=0))/2.*(N_dq+N_au)+N_dq*N_au/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
+		#delta1=np.sqrt(2.*abs((np.mean(cross1_array_in,axis=0)-np.mean(noise1_array_in,axis=0))**2+(np.mean(cross1_array_in,axis=0)-np.mean(noise1_array_in,axis=0))/2.*(N_dq+N_au)+N_dq*N_au/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
+		delta1=np.sqrt(2.*abs((np.mean(theory1_array_in,axis=0))**2+(np.mean(theory1_array_in,axis=0))/2.*(N_dq+N_au)+N_dq*N_au/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
 	
 		cosmic1=np.sqrt(2./((2.*l+1)*np.sqrt(b**2+dl_eff**2)*fsky)*np.mean(theory1_array_in,axis=0)**2)
 
 		N_du=np.mean(Ndu_array_in)
 		N_aq=np.mean(Naq_array_in)
-		delta2=np.sqrt(2.*abs((np.mean(cross2_array_in,axis=0)-np.mean(noise2_array_in,axis=0))**2+(np.mean(cross2_array_in,axis=0)-np.mean(noise2_array_in,axis=0))/2.*(N_dq+N_au)+N_dq*N_au/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
+		#delta2=np.sqrt(2.*abs((np.mean(cross2_array_in,axis=0)-np.mean(noise2_array_in,axis=0))**2+(np.mean(cross2_array_in,axis=0)-np.mean(noise2_array_in,axis=0))/2.*(N_dq+N_au)+N_dq*N_au/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
+		delta2=np.sqrt(2.*abs((np.mean(theory2_array_in,axis=0))**2+(np.mean(theory2_array_in,axis=0))/2.*(N_du+N_aq)+N_du*N_aq/2.)/((2.*l+1.)*np.sqrt(b**2+dl_eff**2)*fsky))
 		cosmic2=np.sqrt(2./((2*l+1)*np.sqrt(b**2+dl_eff**2)*fsky)*np.mean(theory2_array_in,axis=0)**2)
 
         	theory1_array=[]
@@ -874,12 +896,12 @@ def main():
 		plot_l=[]
 		if( b != 1):
 	        	for n in xrange(len(cross1_array_in)):
-	        	        tmp_t1=bin_llcl.bin_llcl(ll*theory1_array_in[n]/bls,b)
-	        	        tmp_t2=bin_llcl.bin_llcl(ll*theory2_array_in[n]/bls,b)
-				tmp_c1=bin_llcl.bin_llcl(ll*cross1_array_in[n]/bls,b)
-	        	        tmp_c2=bin_llcl.bin_llcl(ll*cross2_array_in[n]/bls,b)
-				tmp_n1=bin_llcl.bin_llcl(ll*noise1_array_in[n]/bls,b)
-	        	        tmp_n2=bin_llcl.bin_llcl(ll*noise2_array_in[n]/bls,b)
+	        	        tmp_t1=bin_llcl.bin_llcl(ll*theory1_array_in[n],b)
+	        	        tmp_t2=bin_llcl.bin_llcl(ll*theory2_array_in[n],b)
+				tmp_c1=bin_llcl.bin_llcl(ll*cross1_array_in[n],b)
+	        	        tmp_c2=bin_llcl.bin_llcl(ll*cross2_array_in[n],b)
+				tmp_n1=bin_llcl.bin_llcl(ll*noise1_array_in[n],b)
+	        	        tmp_n2=bin_llcl.bin_llcl(ll*noise2_array_in[n],b)
 	        	        
 				theory1_array.append(tmp_t1['llcl'])
 				theory2_array.append(tmp_t2['llcl'])
@@ -892,40 +914,46 @@ def main():
 	        	        
 				if n == len(cross1_array_in)-1:
 	        	                plot_l=tmp_c1['l_out']
-			tmp_c1=bin_llcl.bin_llcl(ll*cosmic1/bls,b)
-			tmp_d1=bin_llcl.bin_llcl(ll*delta1/bls,b)
+			tmp_c1=bin_llcl.bin_llcl((ll*cosmic1)**2,b)
+			tmp_d1=bin_llcl.bin_llcl((ll*delta1)**2,b)
 		
-			cosmic1=tmp_c1['llcl']
-			delta1=tmp_d1['llcl']
+			cosmic1=np.sqrt(tmp_c1['llcl'])
+			delta1=np.sqrt(tmp_d1['llcl'])
 
-			tmp_c2=bin_llcl.bin_llcl(ll*cosmic2/bls,b)
-			tmp_d2=bin_llcl.bin_llcl(ll*delta2/bls,b)
-			cosmic2=tmp_c2['llcl']
-			delta2=tmp_d2['llcl']
-			
+			tmp_c2=bin_llcl.bin_llcl((ll*cosmic2)**2,b)
+			tmp_d2=bin_llcl.bin_llcl((ll*delta2)**2,b)
+			cosmic2=np.sqrt(tmp_c2['llcl'])
+			delta2=np.sqrt(tmp_d2['llcl'])
+			t_tmp=bin_llcl.bin_llcl(ll*theory_cls,b)
+			theory_cls=t_tmp['llcl']
 		else:
 			plot_l=l
-			theory1_array=np.multiply(ll/bls,theory1_array_in)
-			cross1_array=np.multiply(ll/bls,cross1_array_in)
-			noise1_array=np.multiply(ll/bls,noise1_array_in)
-			theory2_array=np.multiply(ll/bls,theory2_array_in)
-			cross2_array=np.multiply(ll/bls,cross2_array_in)
-			noise2_array=np.multiply(ll/bls,noise2_array_in)
-			cosmic1*=ll/bls
-			cosmic2*=ll/bls
-			delta1*=ll/bls
-			delta2*=ll/bls
+			theory1_array=np.multiply(ll,theory1_array_in)
+			cross1_array=np.multiply(ll,cross1_array_in)
+			noise1_array=np.multiply(ll,noise1_array_in)
+			theory2_array=np.multiply(ll,theory2_array_in)
+			cross2_array=np.multiply(ll,cross2_array_in)
+			noise2_array=np.multiply(ll,noise2_array_in)
+			cosmic1*=ll
+			cosmic2*=ll
+			delta1*=ll
+			delta2*=ll
+			theory_cls*=ll
+		#ipdb.set_trace()
+		bad=np.where(plot_l < 24)
 		noise1=np.mean(noise1_array,axis=0)
 		noise2=np.mean(noise2_array,axis=0)
         	theory_array = np.add(theory1_array,theory2_array)
         	theory=np.mean(theory_array,axis=0)
         	dtheory=np.std(theory_array,axis=0,ddof=1)
-        	cross_array = np.add(np.subtract(cross1_array,noise1),np.subtract(cross2_array,noise2))
+        	#cross_array = np.add(np.subtract(cross1_array,noise1),np.subtract(cross2_array,noise2))
+        	cross_array = np.add(cross1_array,cross2_array)
         	cross=np.mean(cross_array,axis=0)
-        	dcross=np.std(cross_array,axis=0,ddof=1)
+        	#dcross=np.std(cross_array,axis=0,ddof=1)
+        	dcross=np.sqrt( ( np.std(cross1_array,axis=0,ddof=1)**2 + np.std(cross2_array,axis=0,ddof=1)**2)/b)
         	cosmic=np.sqrt(cosmic1**2+cosmic2**2)
         	delta=np.sqrt(delta1**2+delta2**2)
-
+		#cosmic=np.abs(theory_cls)*np.sqrt(2./((2*plot_l+1)*fsky*np.sqrt(dl_eff**2+b**2)))
 		#theory1=np.mean(theory1_array,axis=0)
 		#dtheory1=np.std(theory1_array,axis=0,ddof=1)
 		#cross1=np.mean(cross1_array,axis=0)
