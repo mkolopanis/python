@@ -80,7 +80,8 @@ def likelihood(cross,dcross,theory,mask_name,title):
 		f.write('Maximum Likelihood: {0:2.5f}%  for scale factor {1:.2f} \n'.format(float(chi_array[np.argmax(chi_array)]*100),mean))
 		#f.write('Probability of scale factor =1: {0:2.5f}% \n'.format(float(chi_array[np.where(a_scales ==1)])*100))
 		f.write('Posterior: Mean,\t(1siglo,1sighi),\t(2sighlo,2sighi)\n')
-		f.write('Posterior: {0:.3f}\t({1:.3f},{2:.3f}),\t({3:.3f},{4:.3f}) '.format(mean, s1lo,s1hi, s2lo,s2hi))
+		f.write('Posterior: {0:.3f}\t({1:.3f},{2:.3f}),\t({3:.3f},{4:.3f})\n '.format(mean, s1lo,s1hi, s2lo,s2hi))
+		f.wirte('Posertior SNR: \t {0:.3f}'.format(1./np.mean([s1hi,s1lo])))
 		f.write('\n\n')
 		f.write('Detection Levels using Standard Deviation \n')
 		f.write('Detection Level: {0:.4f} sigma, Signal= {1:.4e}, Noise= {2:.4e} \n'.format(SNR,Sig, Noise))
@@ -767,7 +768,7 @@ def main():
 #	bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),383)**2
 	#bls=hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)**2
 	bls=(hp.gauss_beam(smoothing_scale*np.pi/(180.*60.),3*nside_out-1)*hp.pixwin(nside_out)[3*nside_out])**2
-	N_runs=200
+	N_runs=1000
 	bins=[1,5,10,20,50]
 
 	map_prefix='/home/matt/quiet/quiet_maps/'

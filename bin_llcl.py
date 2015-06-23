@@ -86,7 +86,7 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 		
 		llcl_out=np.sum(y1,-1)/np.sum(w1,-1)
 		#llcl_out.insert(0,np.sum(y[:bins/2]*w[:bins/2])/np.sum(w[:bins/2]))	
-		std_llcl=np.std(y2,-1)
+		std_llcl=np.std(y2,-1)/np.sqrt(bins)
 		#std_llcl.insert(0,np.std(y[:bins/2]))
 		l_out = np.sum(l1,-1)/np.sum(n1,-1)
 		#l_out.insert(0,np.mean(l[:bins/2]))
@@ -120,7 +120,7 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 			l_out[i] = np.mean(l[bins[i]:bins[i+1] ])
 			dl[i]=bins[i+1]-bins[i]
 			llcl_out[i] = np.sum((y*w)[bins[i]:bins[i+1]])/np.sum(w[bins[i]:bins[i+1]])
-			std_llcl[i] = np.std(y[bins[i]:bins[i+1]])
+			std_llcl[i] = np.std(y[bins[i]:bins[i+1]])/np.sqrt(bins[i+1]-bins[i])
 	dllcl=abs(llcl_out)*np.sqrt(2./(2*l_out+1)/dl)
 	deltal=dl
 
