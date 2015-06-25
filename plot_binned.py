@@ -12,7 +12,7 @@ def plotBinned(cls_in,dcls_in,l_out,bins,output_prefix,title=None,theory=None,dt
 		#plt.fill_between(l_out,(theory-dtheory),(theory+dtheory),alpha=.5,facecolor='red')
 	if not (cosmic is None) :
 		plt.errorbar(l_out,theory,yerr=cosmic,color='red')
-	plt.errorbar(l_out,cls_in,yerr=dcls_in,xerr=bins,color='black',fmt='k.',linestyle='None')
+	plt.errorbar(l_out,cls_in,yerr=dcls_in,color='black',fmt='k.',linestyle='None')
 	if not (delta is None) :
 		plt.fill_between(l_out,cls_in-delta,cls_in+delta,color='gray',alpha=0.5)
 	plt.xlim([0,np.max(l_out+bins)])
