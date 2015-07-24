@@ -1,8 +1,8 @@
 import numpy as np
 def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 	"""Bins Continuous Angular Power Spectrum into discrete 
-	    bins of even or irregularly spaced sizes
-	
+        bins of even or irregularly spaced sizes
+
 	Parameters
 	---------
 	llcl_in: float, array-like shape (lmax,) or (Nspec,lmax)
@@ -10,12 +10,11 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 		Either an singular continuous angular power spectrum,
 		or a sequence of Nspec continuous angular power spectrum.
 	ubin: int, scalar or array
-		 bin size of output power spectrum
-		 Accepts integer argument for constant l-space bins or array 
-		 of irregularly sized bins
+                 bin size of output power spectrum
+                 Accepts integer argument for constant l-space bins or array                 of irregularly sized bins
 	uniform: bool, scalar, optional
-		 if True uses uniform weighting of Cls (instead of 2*l+1)
-		 default = False
+                if True uses uniform weighting of Cls (instead of 2*l+1)
+                default = False
 	flatten: bool, scalar, optional
 		if True multiplies input power spectrum by l*(l+1)/(2 * pi)
 		default = False
@@ -24,12 +23,12 @@ def bin_llcl(llcl_in,ubin,uniform=False,flatten=False):
 	Returns
 	-------
 	bn_spec: dictionary of arrays or dictionary of sequence of arrays
-	    keys:
+            keys:
 		l_out: int, array, (nbins,)
-		    l values of binned power spectra
-		
+                    l values of binned power spectra
+
 		deltal: int, arrray, (nbins,)
-		    size of l-bins		
+                    size of l-bins
 
 	        llcl: float, array or sequence of arrays, (nbins,) or (nspec,nbins)
 		    Binned Angular Power spectrum
