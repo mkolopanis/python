@@ -30,7 +30,7 @@ centers=convertcenter([0.0,0],-57.5)
 #centers=convertcenter([1.5,0],-52.5)
 smoothing_scale=40.0
 bins=25
-N_runs=100
+N_runs=500
 nside_out=128
 gal_cut=[0,5,10,15,20,30]
 npix_out=hp.nside2npix(nside_out)
@@ -41,7 +41,7 @@ pix_area=(smoothing_scale*np.pi/180/60.)**2
 nside_in=1024
 npix_in=hp.nside2npix(nside_in)
 
-bands=np.array([95,100])
+bands=np.array([95,150])
 wl=np.array([299792458./(b*1e9) for b in bands])
 beam_fwhm=np.array([.22,.22])*60*np.sqrt(8*np.log(2))
 
@@ -177,7 +177,7 @@ dust_beta=hp.ud_grade(dust_beta,nside_in)
 
 gamma_dust=6.626e-34/(1.38e-23*dust_t)
 dust_factor=np.array([krj_to_kcmb[i]*1e-6*(np.exp(gamma_dust*353e9)-1)/(np.exp(gamma_dust*x*1e9)-1)* (x/353.)**(1+dust_beta) for i,x in enumerate(bands)])
-df_sub=[ hp.ma(hp.ud_grade(df,nside_out)) for  df in dust_factor]
+df_sub=[ hp.ud_grade(df,nside_out) for  df in dust_factor]
 
 ##Testing for noise levels
 ##Create Field for analysis
@@ -195,8 +195,8 @@ print('Keck Array')
 print('\tPreparing Foreground Maps')
 
 
-bl_40=hp.gauss_beam(40.*np.pi/(180.*60.),3*nside_out-1)
-bl_10=hp.gauss_beam(10.*np.pi/(180.*60.),3*nside_out-1)
+bl_40=hp.gauss_beam(40.*np.pi/(180.*60.),3*nside_in-1)
+bl_10=hp.gauss_beam(10.*np.pi/(180.*60.),3*nside_in-1)
 
 hdu_sync=fits.open(synchrotron_file)
 sync_q=hdu_sync[1].data.field(0)
@@ -264,8 +264,6 @@ fsky= 1. - np.sum(mask_bool)/float(len(mask_bool))
 L=np.sqrt(fsky*4*np.pi)
 dl_eff=2*np.pi/L
 
-for nb in xrange(len(df_sub)):
-        df_sub[nb].mask=mask_bool
 
 print('\tGenerating Control Map')
 alpha_radio=hp.read_map(alpha_file,hdu='maps/phi',verbose=False)
@@ -320,11 +318,12 @@ N_aq_array_fr=[]
 for run in xrange(N_runs):
 	print('\tRealization {0:d}'.format(run+1))
 	print('\t\tSmoothing and Downgrading Maps')
-	
+
 	iqu_array=iqu_back.copy().tolist()
 
 	alpha_radio=hp.read_map(alpha_file,hdu='maps/phi',verbose=False)
-	
+        sigma_alpha=hp.read_map(alpha_file,hdu='uncertainty/phi',verbose=False)
+
 	sigma_array=[]
 	for noise_const in noise_const_array:
 		sigma_array.append( noise_const*np.random.normal(0,1,(3,npix_in)))
@@ -337,7 +336,7 @@ for run in xrange(N_runs):
 	for nb in xrange(len(iqu_array)):
 		iqu_array[nb]=hp.smoothing(iqu_array[nb],pol=1,fwhm=np.sqrt( (smoothing_scale)**2 - (beam_fwhm[nb])**2 )*np.pi/(180.*60.),verbose=False)
 		iqu_array[nb]=hp.ud_grade(iqu_array[nb],nside_out=nside_out)
-		
+
 		sigma_array[nb]=hp.smoothing(sigma_array[nb],pol=1,fwhm=np.sqrt(smoothing_scale**2 - beam_fwhm[nb]**2 )*np.pi/(180.*60.),verbose=False)
 		sigma_array[nb]=hp.ud_grade(sigma_array[nb],nside_out=nside_out)
 
@@ -347,27 +346,44 @@ for run in xrange(N_runs):
 	sigma_alpha = hp.ma(sigma_alpha)
 	alpha_radio.mask=mask_bool
 
-	for nb in xrange(len(iqu_array)):	
+	for nb in xrange(len(iqu_array)):
 		for m in xrange(3):
 			iqu_array[nb][m].mask=mask_bool
 			sigma_array[nb][m].mask=mask_bool
+        print "\t\tRemoving Foregrounds"
+        iqu_array_fr=[]
+        for cnt,iqu in enumerate(iqu_array):
+                #redefine temps to make math easier
+                dq=hp.ma(df_sub[cnt]*dust_q)
+                du=hp.ma(df_sub[cnt]*dust_u)
+                sq=hp.ma(sync_factor[cnt]*sync_q)
+                su=hp.ma(sync_factor[cnt]*sync_u)
 
-	iqu_array_fr=[ np.array([iqu[0],iqu[1]-sync_factor[cnt]*sync_q*np.sum(sync_factor[cnt]*sync_q*iqu[1])/np.sum((sync_factor[cnt]*sync_q)**2),iqu[2]-sync_factor[cnt]*sync_u*np.sum(sync_factor[cnt]*sync_u*iqu[2])/np.sum((sync_factor[cnt]*sync_u)**2)]) for cnt,iqu in enumerate(iqu_array)] 
-	iqu_array_fr=[ np.array([iqu[0],iqu[1]-df_sub[cnt]*dust_q*np.sum(df_sub[cnt]*dust_q*iqu[1])/np.sum((df_sub[cnt]*dust_q)**2),iqu[2]-df_sub[cnt]*dust_u*np.sum(df_sub[cnt]*dust_u*iqu[2])/np.sum((df_sub[cnt]*dust_u)**2)]) for cnt,iqu in enumerate(iqu_array_fr)]
+                dq.mask=mask_bool
+                du.mask=mask_bool
+                sq.mask=mask_bool
+                su.mask=mask_bool
+                #normalization factors for scaling 
+                gamma_sync_q= np.sum(iqu[1]*sq)/np.sum(sq**2)- np.sum(dq*sq)/np.sum(sq**2)*( (np.sum(sq**2)*np.sum(iqu[1]*dq)-np.sum(iqu[1]*sq)*np.sum(sq*dq))/(np.sum(dq**2)*np.sum(sq**2)-np.sum(sq*dq)**2) )
+                delta_dust_q= (np.sum(sq**2)*np.sum(iqu[1]*dq)-np.sum(iqu[1]*sq)*np.sum(sq*dq))/( np.sum(dq**2)*np.sum(sq**2)-np.sum(sq*dq)**2)
+
+                gamma_sync_u= np.sum(iqu[2]*su)/np.sum(su**2)- np.sum(du*su)/np.sum(su**2)*( (np.sum(su**2)*np.sum(iqu[2]*du)-np.sum(iqu[2]*su)*np.sum(su*du))/(np.sum(du**2)*np.sum(su**2)-np.sum(su*du)**2) )
+                delta_dust_u= (np.sum(su**2)*np.sum(iqu[2]*du)-np.sum(iqu[2]*su)*np.sum(su*du))/( np.sum(du**2)*np.sum(su**2)-np.sum(su*du)**2)
+
+                iqu_array_fr.append( np.array([iqu[0], iqu[1]-gamma_sync_q*sq-delta_dust_q*dq, iqu[2]-gamma_sync_u*su-delta_dust_u*du]))
 
 	iqu_array_fr=[hp.ma(iqu) for iqu in iqu_array_fr]
-	for nb in xrange(len(iqu_array)):	
-		for m in xrange(3):
+	for nb in xrange(len(iqu_array_fr)):
+		for m in xrange(len(iqu_array_fr[nb])):
 			iqu_array_fr[nb][m].mask=mask_bool
-
 #################################################
 	DQ_array=[]
 	DU_array=[]
 	DQ_fr_array=[]
 	DU_fr_array=[]
-	
+
 	for i in xrange(len(iqu_array)-1):
-		for j in xrange(i+1,len(iqu_array)):	
+		for j in xrange(i+1,len(iqu_array)):
 			DQ_array.append( ( iqu_array[i][1] - iqu_array[j][1])/(2*(wl[i]**2-wl[j]**2)))
 			DU_array.append( ( iqu_array[i][2] - iqu_array[j][2])/(2*(wl[i]**2-wl[j]**2)))
 			DQ_fr_array.append( ( iqu_array_fr[i][1] - iqu_array_fr[j][1])/(2*(wl[i]**2-wl[j]**2)))
@@ -375,10 +391,10 @@ for run in xrange(N_runs):
 
 	aQ_array= [ -im[1]*alpha_radio for im in iqu_array]
 	aU_array= [ im[2]*alpha_radio  for im in iqu_array]
-	
+
 	aQ_fr_array= [ -im[1]*alpha_radio for im in iqu_array_fr]
 	aU_fr_array= [ im[2]*alpha_radio for im in iqu_array_fr]
-	
+
 	print('\t\tCreating Correlators')
 	#DQ_array=hp.ma(DQ_array)
 	#DU_array=hp.ma(DU_array)
@@ -456,7 +472,8 @@ for run in xrange(N_runs):
 	
 	alpha_radio = hp.ma(alpha_radio)
 	sigma_alpha = hp.ma(sigma_alpha)
-
+        alpha_radio.mask=mask_bool
+        sigma_alpha.mask=mask_bool
 	tmp1=[]
 	tmp2=[]
 	for i in xrange(len(sigma_array)-1):
