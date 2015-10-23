@@ -107,6 +107,7 @@ def main():
 	
 
 	num_wl=len(wl)
+        no_noise=[]
 	t_array=np.zeros((num_wl,npix))	
 	q_array=np.zeros((num_wl,npix))
 	sigma_q=np.zeros((num_wl,npix))
@@ -115,6 +116,7 @@ def main():
 	for i in range(num_wl):
 		print('\tFrequency: {0:2.1f}'.format(bands[i]))
 		tmp_cmb=rotate_tqu(simul_cmb,wl[i],alpha_radio);
+                no_noise.append(hp.smoothing(np.copy(tmp_cmb), fwhm=q_fwhm[i]*np.pi/(180*60.),pol=1,verbose=False))
 		sigma_q[i]=np.random.normal(0,1,npix)*noise_const_q[i]
 		sigma_u[i]=np.random.normal(0,1,npix)*noise_const_q[i]
 		tmp_cmb[1]+= np.copy( dust_factor[i]*dust_q+sync_factor[i]*sync_q    )
@@ -265,7 +267,32 @@ def main():
 		q_head.header['INDXSCHM']=('IMPLICIT','indexing : IMPLICIT of EXPLICIT')
 		q_head.header['BAD_DATA']=(hp.UNSEEN,'Sentinel value given to bad pixels')
 		q_head.header["COORDSYS"]=('G','Pixelization coordinate system')
+		#########################
+
+		theo_head=fits.ImageHDU(no_noise[i], name='No Noise IQU')
+		theo_head.header['TFIELDS']=(3,'number of fields in each row')
+		theo_head.header['TYPE1']=('SIGNAL', "STOKES I, Temperature")
+		theo_head.header['TYPE2']='STOKES Q'
+		theo_head.header['TYPE3']='STOKES U'
+		theo_head.header['TUNIT1']=('K_{CMB} Thermodynamic', 'Physical Units of Map')
+		theo_head.header['TUNIT2']=('K_{CMB} Thermodynamic', 'Physical Units of Map')
+		theo_head.header['TUNIT3']=('K_{CMB} Thermodynamic', 'Physical Units of Map')
+		theo_head.header['TFORM1']='E'
+		theo_head.header['TFORM1']='E'
+		theo_head.header['TFORM2']='E'
+		theo_head.header['EXTNAME']='no noise iqu'
+		theo_head.header['POLAR']= 'T'
+		theo_head.header['POLCCONV']=('COSMO','Coord. Convention for polarisation COSMO/IAU')
+		theo_head.header['PIXTYPE']=("HEALPIX","HEALPIX pixelisation")
+		theo_head.header['ORDERING']=("RING","Pixel order scheme, either RING or NESTED")
+		theo_head.header['NSIDE']=(1024,'Healpix Resolution paramter')
+		theo_head.header['OBJECT']=('FULLSKY','Sky coverage, either FULLSKY or PARTIAL')
+		theo_head.header['INDXSCHM']=('IMPLICIT','indexing : IMPLICIT of EXPLICIT')
+		theo_head.header['BAD_DATA']=(hp.UNSEEN,'Sentinel value given to bad pixels')
+		theo_head.header["COORDSYS"]=('G','Pixelization coordinate system')
 		
+
+####################################
 		#tblist=fits.HDUList([prim,tbhdu])
 		err_head=fits.ImageHDU(np.array([sigma_q[i],sigma_u[i]]),name='Q/U UNCERTAINTIES')
 		err_head.header['TFIELDS']=(2,'number of fields in each row')
@@ -297,7 +324,7 @@ def main():
 		tbhdu.header['OBS_NPIX']=(len(all_pix),'Number of pixels observed')
 		tbhdu.header['INDXSCHM']=('IMPLICIT','indexing : IMPLICIT of EXPLICIT')
 		tbhdu.header["COORDSYS"]=('G','Pixelization coordinate system')
-		hdulist=fits.HDUList([prim,q_head,err_head,mask_head,tbhdu,tbhdu1])
+		hdulist=fits.HDUList([prim,q_head,err_head,mask_head,tbhdu,tbhdu1,theo_head])
 		hdulist.writeto(output_prefix+"quiet_simulated_{:.1f}.fits".format(bands[i]),clobber=True)
 		print "quiet_simulated_{:.1f}.fits".format(bands[i])
 
