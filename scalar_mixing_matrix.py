@@ -8,13 +8,13 @@ def wigner_3j(l1,l2,l3):
 	L=l1+l2+l3
 	if L % 2 != 0:
 		return 0
-	return float(Decimal((-1.)**(L/2.))*np.sqrt((fac(L - 2*l1,exact=1)*fac(L-2*l2,exact=1)*fac(L-2*l3,exact=1))/Decimal(fac(L+1,exact=1)))*(Decimal(fac(L/2.,exact=1))/(fac(L/2. - l1,exact=1)*fac(L/2. - l2,exact=1)*fac(L/2. - l3,exact=1))))
+	return float(Decimal((-1.)**(L/2.))*np.sqrt((fac(L - 2*l1,exact=1)*fac(L-2*l2,exact=1)*fac(L-2*l3,exact=1))/Decimal(fac(L+1,exact=1)))*(Decimal(fac(L/2,exact=1))/(fac(L/2 - l1,exact=1)*fac(L/2 - l2,exact=1)*fac(L/2 - l3,exact=1))))
 
 
 def mll_value(inputs):
 	wl,l1,l2,l3=inputs
 	#l3=np.arange(len(wl))
-	array=[(2*i+1)*wl[np.argwhere(l3 == i)[0][0]]*wigner_3j(l1,l2,i)**2 for i in l3]
+	array=[(2*i+1)*wl[np.argwhere(l3 == i).squeeze()]*wigner_3j(l1,l2,i)**2 for i in l3]
 	ml = (2*l2+1)/(4*np.pi)*np.sum(array)
 	return ml
 
