@@ -8,7 +8,7 @@ def wigner_3j(l1,l2,l3):
 	L=l1+l2+l3
 	if L % 2 != 0:
 		return 0
-	return float(Decimal((-1)**(L/2.))*np.sqrt((fac(L - 2*l1,exact=1)*fac(L-2*l2,exact=1)*fac(L-2*l3,exact=1))/Decimal(fac(L+1,exact=1)))*(Decimal(fac(L/2,exact=1))/(fac(L/2 - l1,exact=1)*fac(L/2 - l2,exact=1)*fac(L/2 - l3,exact=1))))
+	return float(Decimal((-1.)**(L/2.))*np.sqrt((fac(L - 2*l1,exact=1)*fac(L-2*l2,exact=1)*fac(L-2*l3,exact=1))/Decimal(fac(L+1,exact=1)))*(Decimal(fac(L/2.,exact=1))/(fac(L/2. - l1,exact=1)*fac(L/2. - l2,exact=1)*fac(L/2. - l3,exact=1))))
 
 
 def mll_value(inputs):
@@ -25,4 +25,4 @@ def Mll(wl,l_in):
 	pool.close()
 	pool.join()
 	#Mll=np.matrix(np.reshape(results,(len(x.flat),len(x.flat))))
-	return results
+	return np.reshape( np.array(results), (len(l_in), len(l_in)))
