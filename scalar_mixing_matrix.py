@@ -2,6 +2,8 @@ import numpy as np
 from scipy.misc import factorial as fac
 from decimal import Decimal
 import multiprocessing
+from sympy.physics.wigner import wigner_3j as wig3j
+from sympy import N
 def wigner_3j(l1,l2,l3):
 	if not ( abs( l1-l2 ) <= l3 <= l1 +l2):
 		return 0
@@ -14,13 +16,14 @@ def wigner_3j(l1,l2,l3):
 def mll_value(inputs):
 	wl,l1,l2,l3=inputs
 	#l3=np.arange(len(wl))
-	array=[(2*i+1)*wl[np.argwhere(l3 == i).squeeze()]*wigner_3j(l1,l2,i)**2 for i in l3]
+	#array=[(2*l+1)*wl[i]*wigner_3j(l1,l2,l)**2 for i,l in enumerate(l3)]
+	array=[(2*l+1)*wl[i]*float(N(wig3j(l1,l2,l,0,0,0)))**2 for i,l in enumerate(l3)]
 	ml = (2*l2+1)/(4*np.pi)*np.sum(array)
 	return ml
 
 def Mll(wl,l_in):
 	x,y=np.meshgrid(l_in,l_in)
-	pool=multiprocessing.Pool()
+	pool=multiprocessing.Pool(processes=6)
 	results=pool.map(mll_value,[[wl,x.flat[i],y.flat[i],l_in] for i in xrange(len(x.flat))])
 	pool.close()
 	pool.join()
