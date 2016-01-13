@@ -21,7 +21,6 @@ def mll_value(inputs):
 	wl,l1,l2,l3=inputs
 	#l3=np.arange(len(wl))
 	array=[(2.*l+1.)*wl[i]*wigner_3j(l1,l2,l)**2 for i,l in enumerate(l3)]
-	#array=[(2*l+1)*wl[i]*float(N(wig3j(l1,l2,l,0,0,0)))**2 for i,l in enumerate(l3)]
 	ml = (2.*l2+1.)/(4*np.pi)*float(np.sum(array))
 	return ml
 
